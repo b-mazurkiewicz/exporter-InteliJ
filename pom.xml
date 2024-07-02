@@ -24,10 +24,7 @@
 			<email>thomas.tom.mueller at gmail dot com</email>
 		</developer>
 	</developers>
-	<scm>
-		<connection>scm:git:https://github.com/h2database/h2database</connection>
-		<url>https://github.com/h2database/h2database</url>
-	</scm>
+
 	<properties>
 		<java.version>17</java.version>
 	</properties>
@@ -85,5 +82,9 @@
 			</plugin>
 		</plugins>
 	</build>
-
+	<scm>
+		<connection>scm:git:https://github.com/b-mazurkiewicz/exporter-InteliJ.git</connection>
+		<developerConnection>scm:git:ssh://github.com/b-mazurkiewicz/exporter-InteliJ.git</developerConnection>
+		<url>https://github.com/b-mazurkiewicz/exporter-InteliJ</url>
+	</scm>
 </project>

@@ -82,3 +82,138 @@ java.sql.SQLClientInfoException: Client info name 'ApplicationName' not supporte
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
 	at java.base/java.lang.Thread.run(Thread.java:840)
+2024-07-03 09:46:21.190374+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; oczekiwano "identifier"
+Syntax error in SQL statement "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; expected "identifier"; SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from user u1_0 [42001-224]
+2024-07-03 09:46:22.275529+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; oczekiwano "identifier"
+Syntax error in SQL statement "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; expected "identifier"; SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from user u1_0 [42001-224]
+2024-07-03 09:46:27.308104+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; oczekiwano "identifier"
+Syntax error in SQL statement "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; expected "identifier"; SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from user u1_0 [42001-224]
+2024-07-03 09:46:57.345684+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; oczekiwano "identifier"
+Syntax error in SQL statement "select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from [*]user u1_0"; expected "identifier"; SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from user u1_0 [42001-224]
+2024-07-03 10:29:04.218994+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a                                    first_name VARCHAR(255),\000d\000a                                    last_name VARCHAR(255),\000d\000a                                    email VARCHAR(255)\000d\000a)"; oczekiwano "identifier"
+Syntax error in SQL statement "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a                                    first_name VARCHAR(255),\000d\000a                                    last_name VARCHAR(255),\000d\000a                                    email VARCHAR(255)\000d\000a)"; expected "identifier"; SQL statement:
+CREATE TABLE IF NOT EXISTS user (
+                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                    first_name VARCHAR(255),
+                                    last_name VARCHAR(255),
+                                    email VARCHAR(255)
+) [42001-224]
+2024-07-03 10:29:04.222992+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (1, 'John', 'Doe', 'john.doe@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (1, 'John', 'Doe', 'john.doe@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (id, first_name, last_name, email) VALUES (1, 'John', 'Doe', 'john.doe@example.com') [42001-224]
+2024-07-03 10:29:04.223993+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (2, 'Jane', 'Smith', 'jane.smith@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (2, 'Jane', 'Smith', 'jane.smith@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (id, first_name, last_name, email) VALUES (2, 'Jane', 'Smith', 'jane.smith@example.com') [42001-224]
+2024-07-03 10:29:04.224992+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (3, 'Robert', 'Brown', 'robert.brown@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (3, 'Robert', 'Brown', 'robert.brown@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (id, first_name, last_name, email) VALUES (3, 'Robert', 'Brown', 'robert.brown@example.com') [42001-224]
+2024-07-03 10:29:04.225994+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (4, 'Emily', 'Davis', 'emily.davis@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (4, 'Emily', 'Davis', 'emily.davis@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (id, first_name, last_name, email) VALUES (4, 'Emily', 'Davis', 'emily.davis@example.com') [42001-224]
+2024-07-03 10:29:04.225994+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (5, 'Michael', 'Wilson', 'michael.wilson@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (id, first_name, last_name, email) VALUES (5, 'Michael', 'Wilson', 'michael.wilson@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (id, first_name, last_name, email) VALUES (5, 'Michael', 'Wilson', 'michael.wilson@example.com') [42001-224]
+2024-07-03 10:29:20.344023+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a                                    first_name VARCHAR(255),\000d\000a                                    last_name VARCHAR(255),\000d\000a                                    email VARCHAR(255)\000d\000a)"; oczekiwano "identifier"
+Syntax error in SQL statement "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a                                    first_name VARCHAR(255),\000d\000a                                    last_name VARCHAR(255),\000d\000a                                    email VARCHAR(255)\000d\000a)"; expected "identifier"; SQL statement:
+CREATE TABLE IF NOT EXISTS user (
+                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                    first_name VARCHAR(255),
+                                    last_name VARCHAR(255),
+                                    email VARCHAR(255)
+) [42001-224]
+2024-07-03 10:33:03.690036+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a    first_name VARCHAR(255),\000d\000a    last_name VARCHAR(255),\000d\000a    email VARCHAR(255)\000d\000a)"; oczekiwano "identifier"
+Syntax error in SQL statement "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a    first_name VARCHAR(255),\000d\000a    last_name VARCHAR(255),\000d\000a    email VARCHAR(255)\000d\000a)"; expected "identifier"; SQL statement:
+CREATE TABLE IF NOT EXISTS user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    email VARCHAR(255)
+) [42001-224]
+2024-07-03 10:33:03.694035+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (first_name, last_name, email) VALUES ('John', 'Doe', 'john.doe@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (first_name, last_name, email) VALUES ('John', 'Doe', 'john.doe@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (first_name, last_name, email) VALUES ('John', 'Doe', 'john.doe@example.com') [42001-224]
+2024-07-03 10:33:03.695034+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Jane', 'Smith', 'jane.smith@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Jane', 'Smith', 'jane.smith@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (first_name, last_name, email) VALUES ('Jane', 'Smith', 'jane.smith@example.com') [42001-224]
+2024-07-03 10:33:03.696034+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Robert', 'Brown', 'robert.brown@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Robert', 'Brown', 'robert.brown@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (first_name, last_name, email) VALUES ('Robert', 'Brown', 'robert.brown@example.com') [42001-224]
+2024-07-03 10:33:03.696034+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Emily', 'Davis', 'emily.davis@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Emily', 'Davis', 'emily.davis@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (first_name, last_name, email) VALUES ('Emily', 'Davis', 'emily.davis@example.com') [42001-224]
+2024-07-03 10:33:03.697035+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Michael', 'Wilson', 'michael.wilson@example.com')"; oczekiwano "identifier"
+Syntax error in SQL statement "INSERT INTO [*]user (first_name, last_name, email) VALUES ('Michael', 'Wilson', 'michael.wilson@example.com')"; expected "identifier"; SQL statement:
+INSERT INTO user (first_name, last_name, email) VALUES ('Michael', 'Wilson', 'michael.wilson@example.com') [42001-224]
+2024-07-03 10:33:14.272347+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a    first_name VARCHAR(255),\000d\000a    last_name VARCHAR(255),\000d\000a    email VARCHAR(255)\000d\000a)"; oczekiwano "identifier"
+Syntax error in SQL statement "CREATE TABLE IF NOT EXISTS [*]user (\000d\000a    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a    first_name VARCHAR(255),\000d\000a    last_name VARCHAR(255),\000d\000a    email VARCHAR(255)\000d\000a)"; expected "identifier"; SQL statement:
+CREATE TABLE IF NOT EXISTS user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    email VARCHAR(255)
+) [42001-224]
+2024-07-03 10:33:27.805916+02:00 jdbc[14]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "CREATE TABLE IF NOT EXISTS [*]User (\000d\000a    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a    first_name VARCHAR(255),\000d\000a    last_name VARCHAR(255),\000d\000a    email VARCHAR(255)\000d\000a)"; oczekiwano "identifier"
+Syntax error in SQL statement "CREATE TABLE IF NOT EXISTS [*]User (\000d\000a    id BIGINT AUTO_INCREMENT PRIMARY KEY,\000d\000a    first_name VARCHAR(255),\000d\000a    last_name VARCHAR(255),\000d\000a    email VARCHAR(255)\000d\000a)"; expected "identifier"; SQL statement:
+CREATE TABLE IF NOT EXISTS User (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    email VARCHAR(255)
+) [42001-224]
+2024-07-03 10:50:51.599671+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "insert into [*]user (email,first_name,last_name,id) values (?,?,?,default)"; oczekiwano "identifier"
+Syntax error in SQL statement "insert into [*]user (email,first_name,last_name,id) values (?,?,?,default)"; expected "identifier"; SQL statement:
+insert into user (email,first_name,last_name,id) values (?,?,?,default) [42001-224]
+2024-07-03 11:19:20.287629+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+insert into users (email,first_name,last_name,id) values (?,?,?,default) [42104-224]
+2024-07-03 11:25:46.291119+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+insert into users (email,first_name,last_name,id) values (?,?,?,default) [42104-224]
+2024-07-03 11:27:28.812292+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+insert into users (email,first_name,last_name,id) values (?,?,?,default) [42104-224]
+2024-07-03 11:29:02.305089+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from users u1_0 [42104-224]
+2024-07-03 11:29:03.379409+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from users u1_0 [42104-224]
+2024-07-03 11:29:08.416101+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from users u1_0 [42104-224]
+2024-07-03 11:29:38.445079+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from users u1_0 [42104-224]
+2024-07-03 11:32:33.866398+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from users u1_0 [42104-224]
+2024-07-03 11:32:34.926296+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from users u1_0 [42104-224]
+2024-07-03 11:32:39.964057+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USERS" not found (this database is empty); SQL statement:
+select u1_0.id,u1_0.email,u1_0.first_name,u1_0.last_name from users u1_0 [42104-224]

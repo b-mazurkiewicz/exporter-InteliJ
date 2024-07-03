@@ -15,5 +15,5 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    // Metody do zapisywania, aktualizacji, usuwania użytkowników
+    public void saveUser(User user){ userRepository.save(user); }
 }

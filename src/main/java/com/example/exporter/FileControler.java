@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -44,7 +45,7 @@ public class FileControler {
         headerCellStyle.setFont(headerFont);
 
         //NAZWY KOLUMN DO ZMIANY ZE WZGLĘDU NA ZAWARTOŚĆ DATASET
-        XSSFRow headerRow = sheet.createRow(0);
+        Row headerRow = sheet.createRow(0);
         headerRow.createCell(0).setCellValue("ID");
         headerRow.createCell(1).setCellValue("FirstName");
         headerRow.createCell(2).setCellValue("LastName");
@@ -56,7 +57,7 @@ public class FileControler {
 
         //ZWROCIC UWAGE NA NAZWY KOLUMN W POZNIEJSZYCH WERSJACH TABELI
         for (User user : listUsers) {
-            XSSFRow row = sheet.createRow(rowCount++);
+            Row row = sheet.createRow(rowCount++);
             row.createCell(0).setCellValue(user.getId());
             row.createCell(1).setCellValue(user.getFirstName());
             row.createCell(2).setCellValue(user.getLastName());

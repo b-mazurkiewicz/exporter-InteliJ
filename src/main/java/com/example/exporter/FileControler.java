@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.List;
-
 @RestController
 public class FileControler {
 
@@ -23,7 +22,7 @@ public class FileControler {
 
     @GetMapping("/export/excel")
     public void exportExcel(HttpServletResponse response) throws IOException {
-        response.setContentType("application/vnd.openxmlformat-officedocument.spreadsheetml.sheet");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         String headerKey = "Content-Disposition";
         String headerValue = "attachment; filename=ExcelDataSet.xlsx";
         response.setHeader(headerKey, headerValue);
@@ -49,6 +48,10 @@ public class FileControler {
         headerRow.createCell(1).setCellValue("FirstName");
         headerRow.createCell(2).setCellValue("LastName");
         headerRow.createCell(3).setCellValue("Email");
+        headerRow.createCell(4).setCellValue("Street");
+        headerRow.createCell(5).setCellValue("City");
+        headerRow.createCell(6).setCellValue("ZipCode");
+        headerRow.createCell(7).setCellValue("Country");
 
         headerRow.forEach(cell -> cell.setCellStyle(headerCellStyle));
 
@@ -61,16 +64,20 @@ public class FileControler {
             row.createCell(1).setCellValue(user.getFirstName());
             row.createCell(2).setCellValue(user.getLastName());
             row.createCell(3).setCellValue(user.getEmail());
+            if (user.getAddress() != null) {
+                row.createCell(4).setCellValue(user.getAddress().getStreet());
+                row.createCell(5).setCellValue(user.getAddress().getCity());
+                row.createCell(6).setCellValue(user.getAddress().getZipCode());
+                row.createCell(7).setCellValue(user.getAddress().getCountry());
+            }
         }
 
         //AUTOMATYCZNA WIELKOSC KOLUMN
-        for (int i=0;i < listUsers.size(); i++){
+        for (int i = 0; i < 8; i++) {
             sheet.autoSizeColumn(i);
         }
 
-        //ServletOutputStream outputStream = response.getOutputStream();
         workbook.write(response.getOutputStream());
         workbook.close();
-        //outputStream.close();
     }
 }

@@ -1,3 +1,4 @@
+/*
 -- Tworzenie tabeli Address
 CREATE TABLE IF NOT EXISTS Address (
                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -16,3 +17,4 @@ CREATE TABLE IF NOT EXISTS Excel_Data_Set (
                                               address_id BIGINT,
                                               FOREIGN KEY (address_id) REFERENCES Address(id)
 );
+*/

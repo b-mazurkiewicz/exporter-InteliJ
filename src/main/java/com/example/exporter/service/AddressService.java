@@ -1,5 +1,7 @@
-package com.example.exporter;
+package com.example.exporter.service;
 
+import com.example.exporter.repository.AddressRepository;
+import com.example.exporter.model.Address;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,8 @@
-package com.example.exporter;
+package com.example.exporter.controller;
 
-import jakarta.servlet.ServletOutputStream;
+import com.example.exporter.model.Address;
+import com.example.exporter.model.User;
+import com.example.exporter.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -11,8 +13,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.List;

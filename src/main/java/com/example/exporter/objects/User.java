@@ -1,4 +1,4 @@
-package com.example.exporter;
+package com.example.exporter.objects;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

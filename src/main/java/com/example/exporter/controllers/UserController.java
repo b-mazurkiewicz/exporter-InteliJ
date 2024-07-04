@@ -1,5 +1,7 @@
-package com.example.exporter;
+package com.example.exporter.controllers;
 
+import com.example.exporter.services.UserService;
+import com.example.exporter.objects.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

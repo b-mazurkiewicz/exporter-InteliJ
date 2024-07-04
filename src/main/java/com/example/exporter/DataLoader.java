@@ -1,5 +1,7 @@
 package com.example.exporter;
 
+import com.example.exporter.objects.User;
+import com.example.exporter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;

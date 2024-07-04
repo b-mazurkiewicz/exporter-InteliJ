@@ -22,7 +22,7 @@ public class User {
     @Column(name = "email")
     private String email;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    @OneToOne
+    @JoinColumn(name = "address_id")
     private Address address;
 }

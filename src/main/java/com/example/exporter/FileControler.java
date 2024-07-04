@@ -9,12 +9,15 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.List;
-@RestController
+
+@Controller
 public class FileControler {
 
     @Autowired
@@ -31,8 +34,8 @@ public class FileControler {
 
         XSSFWorkbook workbook = new XSSFWorkbook();
 
-        //AKTUALNIE WPISUJEMY USERS ZE WZGLĘDU NA RODZAJ PRZECHOWYWANYCH DANYCH
-        XSSFSheet sheet = workbook.createSheet("Users");        //DO ZMIANY POTEM
+        // AKTUALNIE WPISUJEMY USERS ZE WZGLĘDU NA RODZAJ PRZECHOWYWANYCH DANYCH
+        XSSFSheet sheet = workbook.createSheet("Users");        // DO ZMIANY POTEM
 
         Font headerFont = workbook.createFont();
         headerFont.setBold(true);
@@ -42,37 +45,38 @@ public class FileControler {
         CellStyle headerCellStyle = workbook.createCellStyle();
         headerCellStyle.setFont(headerFont);
 
-        //NAZWY KOLUMN DO ZMIANY ZE WZGLĘDU NA ZAWARTOŚĆ DATASET
+        // NAZWY KOLUMN DO ZMIANY ZE WZGLĘDU NA ZAWARTOŚĆ DATASET
         XSSFRow headerRow = sheet.createRow(0);
         headerRow.createCell(0).setCellValue("ID");
         headerRow.createCell(1).setCellValue("FirstName");
         headerRow.createCell(2).setCellValue("LastName");
         headerRow.createCell(3).setCellValue("Email");
-        headerRow.createCell(4).setCellValue("Street");
-        headerRow.createCell(5).setCellValue("City");
-        headerRow.createCell(6).setCellValue("ZipCode");
-        headerRow.createCell(7).setCellValue("Country");
+        headerRow.createCell(4).setCellValue("Street");     // Ulica
+        headerRow.createCell(5).setCellValue("City");       // Miasto
+        headerRow.createCell(6).setCellValue("ZipCode");    // Kod pocztowy
+        headerRow.createCell(7).setCellValue("Country");    // Kraj
 
         headerRow.forEach(cell -> cell.setCellStyle(headerCellStyle));
 
         int rowCount = 1;
 
-        //ZWROCIC UWAGE NA NAZWY KOLUMN W POZNIEJSZYCH WERSJACH TABELI
+        // ZWROCIC UWAGE NA NAZWY KOLUMN W POZNIEJSZYCH WERSJACH TABELI
         for (User user : listUsers) {
             XSSFRow row = sheet.createRow(rowCount++);
             row.createCell(0).setCellValue(user.getId());
             row.createCell(1).setCellValue(user.getFirstName());
             row.createCell(2).setCellValue(user.getLastName());
             row.createCell(3).setCellValue(user.getEmail());
-            if (user.getAddress() != null) {
-                row.createCell(4).setCellValue(user.getAddress().getStreet());
-                row.createCell(5).setCellValue(user.getAddress().getCity());
-                row.createCell(6).setCellValue(user.getAddress().getZipCode());
-                row.createCell(7).setCellValue(user.getAddress().getCountry());
+            Address address = user.getAddress(); // Pobieranie adresu użytkownika
+            if (address != null) {
+                row.createCell(4).setCellValue(address.getStreet());
+                row.createCell(5).setCellValue(address.getCity());
+                row.createCell(6).setCellValue(address.getZipCode());
+                row.createCell(7).setCellValue(address.getCountry());
             }
         }
 
-        //AUTOMATYCZNA WIELKOSC KOLUMN
+        // AUTOMATYCZNA WIELKOŚĆ KOLUMN
         for (int i = 0; i < 8; i++) {
             sheet.autoSizeColumn(i);
         }

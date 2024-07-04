@@ -1,5 +1,5 @@
 package com.example.exporter;
-
+/*
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -37,3 +37,4 @@ public class DataLoader implements CommandLineRunner {
         userRepository.save(new User(null, "Michael", "Wilson", "michael.wilson@example.com", address5));
     }
 }
+*/

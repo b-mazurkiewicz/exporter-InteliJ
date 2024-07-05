@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS Address (
                                        country VARCHAR(255)
 );
 
--- Tworzenie tabeli Excel_Data_Set
+-- Tworzenie tabeli User
 CREATE TABLE IF NOT EXISTS Excel_Data_Set (
                                               id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                               first_name VARCHAR(255),
@@ -17,4 +17,5 @@ CREATE TABLE IF NOT EXISTS Excel_Data_Set (
                                               address_id BIGINT,
                                               FOREIGN KEY (address_id) REFERENCES Address(id)
 );
+
 */

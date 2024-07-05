@@ -48,18 +48,13 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
-			<version>6.1.10</version> <!-- Wersja może się różnić -->
+			<version>6.1.10</version>
 		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<version>4.0.1</version> <!-- Wersja może się różnić -->
-			<scope>provided</scope>
-		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-dependencies</artifactId>
-			<version>3.3.1</version> <!-- Uaktualnij do najnowszej wersji Spring Boot -->
+			<version>3.3.1</version>
 			<type>pom</type>
 			<scope>import</scope>
 		</dependency>

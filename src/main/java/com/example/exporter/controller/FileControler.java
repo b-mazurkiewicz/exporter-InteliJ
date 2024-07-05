@@ -14,14 +14,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 
 
@@ -41,7 +40,7 @@ public class FileControler {
     private ExportTaskManager taskManager;
 
     // Metoda rozpoczynająca zadanie eksportu
-    @PostMapping("/excel")
+    @GetMapping("/excel")           //ZMIENIŁEM PostMapping NA GetMapping, W RAZIE POTRZEBY TRZEBA WZIĄĆ TO POD UWAGE
     @ResponseBody
     public void exportExcel(HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -49,10 +48,13 @@ public class FileControler {
         String headerValue = "attachment; filename=ExcelDataSet.xlsx"; //ustawienie specyficznej nazwy dla pliku
         response.setHeader(headerKey, headerValue);
 
+        /*
         //Dodanie numeru id dla każdego exportu
         String taskId = UUID.randomUUID().toString(); // Generowanie unikalnego ID dla zadania
         ExportTask task = new ExportTask(taskId, "IN_PROGRESS", null); // Tworzenie nowego zadania eksportu
         taskManager.addTask(task); // Dodanie zadania do menedżera zadań
+        */
+
 
         List<User> listUsers = userService.getAllUsers();
 
@@ -103,7 +105,7 @@ public class FileControler {
 
         workbook.write(response.getOutputStream());
         workbook.close();
-/*
+        /*
         // Asynchroniczne przetwarzanie zadania eksportu
         CompletableFuture.runAsync(() -> {
             try {
@@ -171,12 +173,14 @@ public class FileControler {
             sheet.autoSizeColumn(i);
         }
 
+
         String filePath = "path/to/exported/ExcelDataSet.xlsx"; // Ścieżka do pliku wynikowego
         try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
             workbook.write(fileOut); // Zapisanie workbook'a do pliku
         }
         workbook.close(); // Zamknięcie workbook'a
         return filePath; // Zwrócenie ścieżki do pliku
+
     }
 
     // Metoda sprawdzająca status zadania

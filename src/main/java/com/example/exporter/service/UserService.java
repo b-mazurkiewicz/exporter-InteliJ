@@ -1,5 +1,7 @@
 package com.example.exporter.service;
 
+import com.example.exporter.model.Address;
+import com.example.exporter.repository.AddressRepository;
 import com.example.exporter.repository.UserRepository;
 import com.example.exporter.model.User;
 import jakarta.transaction.Transactional;
@@ -11,7 +13,11 @@ import java.util.List;
 @Service
 public class UserService {
 
+    @Autowired
     private final UserRepository userRepository;
+
+    @Autowired
+    private AddressRepository addressRepository;
 
     @Autowired
     public UserService(UserRepository userRepository) {
@@ -41,5 +47,9 @@ public class UserService {
     @Transactional
     public User getUserWithAddressById(Long id) {
         return userRepository.findUserWithAddressById(id);
+    }
+
+    public Address createAddress(Address address) {
+        return addressRepository.save(address);
     }
 }

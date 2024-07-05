@@ -1,14 +1,17 @@
 package com.example.exporter.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.util.Set;
+
 @Entity
 @Table(name = "Address")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,4 +28,18 @@ public class Address {
 
     @Column(name = "country")
     private String country;
+
+    @OneToMany(mappedBy = "address")
+    private Set<User> users;
+
+    
+
+    // Konstruktor z argumentami (bez id i users)
+    public Address(Long Id, String street, String city, String zipCode, String country) {
+        this.id = Id;
+        this.street = street;
+        this.city = city;
+        this.zipCode = zipCode;
+        this.country = country;
+    }
 }

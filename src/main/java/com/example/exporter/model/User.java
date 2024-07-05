@@ -1,13 +1,14 @@
 package com.example.exporter.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 @Entity(name="Excel_Data_Set")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,7 +23,15 @@ public class User {
     @Column(name = "email")
     private String email;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "address_id")
     private Address address;
+
+    // Konstruktor z argumentami (bez id)
+    public User(String firstName, String lastName, String email, Address address) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.address = address;
+    }
 }

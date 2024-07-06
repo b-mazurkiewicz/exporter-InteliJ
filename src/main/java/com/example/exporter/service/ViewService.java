@@ -15,10 +15,13 @@ public class ViewService {
     }
 
     public void createViews() {
-        String createViewSql = "CREATE VIEW IF NOT EXISTS UserAddressView AS " +
-                "SELECT u.id, u.first_name, u.last_name, u.email, a.street, a.city, a.zip_code, a.country " +
+        String createViewSql = "CREATE OR REPLACE VIEW UserAddressCompanyView AS " +
+                "SELECT u.id AS user_id, u.first_name, u.last_name, u.email, " +
+                "a.street AS address_street, a.city AS address_city, a.zip_code AS address_zip_code, a.country AS address_country, " +
+                "c.company_name, c.city AS company_city, c.nip AS company_nip, c.country AS company_country " +
                 "FROM Excel_Data_Set u " +
-                "JOIN Address a ON u.address_id = a.id";
+                "LEFT JOIN Address a ON u.address_id = a.id " +
+                "LEFT JOIN Company c ON u.company_id = c.id";
         jdbcTemplate.execute(createViewSql);
     }
 }

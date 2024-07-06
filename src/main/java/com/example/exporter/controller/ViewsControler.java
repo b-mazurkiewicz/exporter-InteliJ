@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 @RestController
 @RequestMapping("/api/views")
 public class ViewsControler {
@@ -17,7 +16,7 @@ public class ViewsControler {
         this.viewService = viewService;
     }
 
-    @PostMapping("/create")
+    @RequestMapping("/create")
     public void createView() {
         viewService.createViews();
     }

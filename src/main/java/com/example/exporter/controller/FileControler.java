@@ -196,6 +196,17 @@ public class FileControler {
         workbook.write(response.getOutputStream());
         workbook.close();
     }
+/*
+    @Autowired
+    public FileControler(ExportTaskManager excelExportService) {
+        this.excelExportService = excelExportService;
+    }
+
+    @GetMapping("/export/excel/{tableName}")
+    public void exportToExcel(@PathVariable String tableName, HttpServletResponse response) throws IOException {
+        excelExportService.exportToExcel(tableName, response);
+    }
+*/
     /*
     @GetMapping("/status/{taskId}")
     @ResponseBody

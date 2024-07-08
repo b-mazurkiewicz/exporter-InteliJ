@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ViewService {
 
@@ -23,5 +25,11 @@ public class ViewService {
                 "LEFT JOIN Address a ON u.address_id = a.id " +
                 "LEFT JOIN Company c ON u.company_id = c.id";
         jdbcTemplate.execute(createViewSql);
+    }
+    public List<String> getTablesAndViews() {
+        String sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='PUBLIC' " +
+                "UNION ALL " +
+                "SELECT table_name FROM information_schema.views WHERE table_schema='PUBLIC'";
+        return jdbcTemplate.queryForList(sql, String.class);
     }
 }

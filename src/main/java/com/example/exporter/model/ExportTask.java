@@ -11,7 +11,8 @@ import org.springframework.web.context.WebApplicationContext;
 @Getter
 @Setter
 public class ExportTask {
-    private String taskId;  // Unikalny identyfikator zadania
-    private String status;  // Status zadania (IN_PROGRESS, COMPLETED, FAILED)
-    private String filePath; // Ścieżka do wygenerowanego pliku
+
+    private String taskId;
+    private String status;
+    private String tableName;
 }

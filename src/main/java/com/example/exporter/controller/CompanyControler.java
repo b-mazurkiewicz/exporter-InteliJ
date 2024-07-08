@@ -12,10 +12,7 @@ import java.util.List;
 public class CompanyControler {
     @Autowired
     private CompanyService companyService;
-    /*@GetMapping("/nip/{nip}")
-    public Company getCompanyByNip(@PathVariable String nip) {
-        return companyService.getCompanyByNip(nip);
-    }*/
+
     @GetMapping
     public List<Company> getAllCompanies() {
         return companyService.getAllCompanies();

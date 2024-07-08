@@ -23,10 +23,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 
-@Controller
+@RestController
 @RequestMapping("/api/export")
 public class FileControler {
 
@@ -39,185 +40,76 @@ public class FileControler {
         this.taskManager = taskManager;
     }
 
-    @GetMapping("/excel")
-    public void exportExcel(HttpServletResponse response) throws IOException {
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        String headerKey = "Content-Disposition";
-        String headerValue = "attachment; filename=ExcelDataSet.xlsx";
-        response.setHeader(headerKey, headerValue);
-
-        List<User> listUsers = userService.getAllUsers();
-
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Users");
-
-        Font headerFont = workbook.createFont();
-        headerFont.setBold(true);
-        headerFont.setFontHeightInPoints((short) 12);
-        headerFont.setColor(IndexedColors.BLUE.getIndex());
-
-        CellStyle headerCellStyle = workbook.createCellStyle();
-        headerCellStyle.setFont(headerFont);
-
-        XSSFRow headerRow = sheet.createRow(0);
-        headerRow.createCell(0).setCellValue("ID");
-        headerRow.createCell(1).setCellValue("FirstName");
-        headerRow.createCell(2).setCellValue("LastName");
-        headerRow.createCell(3).setCellValue("Email");
-        headerRow.createCell(4).setCellValue("Street");
-        headerRow.createCell(5).setCellValue("City");
-        headerRow.createCell(6).setCellValue("ZipCode");
-        headerRow.createCell(7).setCellValue("Country");
-        headerRow.createCell(8).setCellValue("CompanyName"); // Dodanie nazwy firmy
-
-        headerRow.forEach(cell -> cell.setCellStyle(headerCellStyle));
-
-        int rowCount = 1;
-
-        for (User user : listUsers) {
-            XSSFRow row = sheet.createRow(rowCount++);
-            row.createCell(0).setCellValue(user.getId());
-            row.createCell(1).setCellValue(user.getFirstName());
-            row.createCell(2).setCellValue(user.getLastName());
-            row.createCell(3).setCellValue(user.getEmail());
-            Address address = user.getAddress();
-            if (address != null) {
-                row.createCell(4).setCellValue(address.getStreet());
-                row.createCell(5).setCellValue(address.getCity());
-                row.createCell(6).setCellValue(address.getZipCode());
-                row.createCell(7).setCellValue(address.getCountry());
-            }
-            Company company = user.getCompany(); // Pobranie danych o firmie
-            if (company != null) {
-                row.createCell(8).setCellValue(company.getCompanyName()); // Ustawienie nazwy firmy
-            }
-        }
-
-        for (int i = 0; i < 9; i++) { // Zmiana na 9 kolumn
-            sheet.autoSizeColumn(i);
-        }
-
-        workbook.write(response.getOutputStream());
-        workbook.close();
+    // Mapping do wyświetlania wszystkich tabel i widoków
+    @GetMapping("/tables")
+    public ResponseEntity<List<String>> getAllTablesAndViews() {
+        List<String> tablesAndViews = taskManager.getAllTablesAndViews();
+        return ResponseEntity.ok(tablesAndViews);
     }
 
-
-
-    // Metoda rozpoczynająca zadanie eksportu i zwracająca ID zadania
-    @GetMapping("/status")
-    public ResponseEntity<String> exportExcel() {
-        String taskId = UUID.randomUUID().toString(); // Generowanie unikalnego ID dla zadania
-        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", null); // Tworzenie nowego zadania eksportu
-        taskManager.addTask(task); // Dodanie zadania do menedżera zadań
-        return ResponseEntity.ok(taskId); // Zwrócenie ID zadania w ciele odpowiedzi
+    // Mapping do rozpoczęcia zadania eksportu na podstawie nazwy tabeli/widoku
+    @GetMapping("/export/{tableName}")
+    public ResponseEntity<String> startExportTask(@PathVariable String tableName) {
+        String taskId = UUID.randomUUID().toString();
+        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", tableName);
+        taskManager.addTask(task);
+        return ResponseEntity.ok(taskId);
     }
 
-    // Metoda zwracająca status zadania o podanym taskId
+    // Mapping do sprawdzania statusu zadania na podstawie ID
     @GetMapping("/status/{taskId}")
     public ResponseEntity<ExportTask> getStatus(@PathVariable String taskId) {
         ExportTask task = taskManager.getTask(taskId);
         if (task != null) {
-            return ResponseEntity.ok(task); // Zwrócenie statusu zadania, jeśli istnieje
+            return ResponseEntity.ok(task);
         } else {
-            return ResponseEntity.notFound().build(); // Zwrócenie odpowiedzi 404, jeśli zadanie nie zostało znalezione
+            return ResponseEntity.notFound().build();
         }
     }
+
+    // Mapping do pobierania pliku Excel na podstawie ID zadania
     @GetMapping("/excel/{taskId}")
     public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
-        ExportTask exportTask = taskManager.getTask(taskId); // Pobierz zadanie eksportu na podstawie taskId
+        ExportTask exportTask = taskManager.getTask(taskId);
         if (exportTask == null) {
-            // Obsłuż sytuację, gdy zadanie nie istnieje
-            //throw new ResourceNotFoundException("Task not found with id: " + taskId);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Task not found");
+            return;
         }
 
-        // Pobierz dane, które mają być eksportowane do pliku Excel na podstawie taskId (np. użytkowników)
-        List<User> listUsers = userService.getAllUsers();
+        String tableName = exportTask.getTableName();
+        List<Map<String, Object>> data = taskManager.getTableData(tableName);
 
-        // Ustawienie odpowiedzi HTTP dla generowanego pliku Excel
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         String headerKey = "Content-Disposition";
-        String headerValue = "attachment; filename=ExcelDataSet_" + taskId + ".xlsx";
+        String headerValue = "attachment; filename=Export_" + taskId + ".xlsx";
         response.setHeader(headerKey, headerValue);
 
-        // Tworzenie nowego workbooka Excel
         XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Users");
+        XSSFSheet sheet = workbook.createSheet("Data");
 
-        // Utworzenie stylu dla nagłówków
-        Font headerFont = workbook.createFont();
-        headerFont.setBold(true);
-        headerFont.setFontHeightInPoints((short) 12);
-        headerFont.setColor(IndexedColors.BLUE.getIndex());
-        CellStyle headerCellStyle = workbook.createCellStyle();
-        headerCellStyle.setFont(headerFont);
-
-        // Utworzenie wiersza nagłówkowego
-        XSSFRow headerRow = sheet.createRow(0);
-        headerRow.createCell(0).setCellValue("ID");
-        headerRow.createCell(1).setCellValue("FirstName");
-        headerRow.createCell(2).setCellValue("LastName");
-        headerRow.createCell(3).setCellValue("Email");
-        headerRow.createCell(4).setCellValue("Street");
-        headerRow.createCell(5).setCellValue("City");
-        headerRow.createCell(6).setCellValue("ZipCode");
-        headerRow.createCell(7).setCellValue("Country");
-        headerRow.createCell(8).setCellValue("CompanyName");
-
-        // Ustawienie stylu nagłówka na każdej komórce wiersza nagłówkowego
-        headerRow.forEach(cell -> cell.setCellStyle(headerCellStyle));
-
-        // Dodawanie danych użytkowników do arkusza Excel
-        int rowCount = 1;
-        for (User user : listUsers) {
-            XSSFRow row = sheet.createRow(rowCount++);
-            row.createCell(0).setCellValue(user.getId());
-            row.createCell(1).setCellValue(user.getFirstName());
-            row.createCell(2).setCellValue(user.getLastName());
-            row.createCell(3).setCellValue(user.getEmail());
-            Address address = user.getAddress();
-            if (address != null) {
-                row.createCell(4).setCellValue(address.getStreet());
-                row.createCell(5).setCellValue(address.getCity());
-                row.createCell(6).setCellValue(address.getZipCode());
-                row.createCell(7).setCellValue(address.getCountry());
+        if (!data.isEmpty()) {
+            XSSFRow headerRow = sheet.createRow(0);
+            Map<String, Object> firstRow = data.get(0);
+            int cellIdx = 0;
+            for (String column : firstRow.keySet()) {
+                headerRow.createCell(cellIdx++).setCellValue(column);
             }
-            Company company = user.getCompany();
-            if (company != null) {
-                row.createCell(8).setCellValue(company.getCompanyName());
+
+            int rowIdx = 1;
+            for (Map<String, Object> rowData : data) {
+                XSSFRow row = sheet.createRow(rowIdx++);
+                cellIdx = 0;
+                for (Object value : rowData.values()) {
+                    row.createCell(cellIdx++).setCellValue(value != null ? value.toString() : "");
+                }
+            }
+
+            for (int i = 0; i < firstRow.size(); i++) {
+                sheet.autoSizeColumn(i);
             }
         }
 
-        // Automatyczne dostosowanie szerokości kolumn do zawartości
-        for (int i = 0; i < 9; i++) {
-            sheet.autoSizeColumn(i);
-        }
-
-        // Zapisanie workbooka do odpowiedzi HTTP
         workbook.write(response.getOutputStream());
         workbook.close();
     }
-    /*
-    @GetMapping("/status/{taskId}")
-    @ResponseBody
-    public ExportTask getStatus(@PathVariable String taskId) {
-        return taskManager.getTask(taskId);
-    }
-
-    @GetMapping("/download/{taskId}")
-    public void downloadFile(@PathVariable String taskId, HttpServletResponse response) throws IOException {
-        ExportTask task = taskManager.getTask(taskId);
-        if (task != null && "COMPLETED".equals(task.getStatus())) {
-            File file = new File(task.getFilePath());
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
-            response.setContentLength((int) file.length());
-            try (FileInputStream inputStream = new FileInputStream(file)) {
-                FileCopyUtils.copy(inputStream, response.getOutputStream());
-            }
-        } else {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
-    }
-    */
-
 }

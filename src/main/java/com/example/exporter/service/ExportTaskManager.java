@@ -2,10 +2,7 @@ package com.example.exporter.service;
 
 import com.example.exporter.model.ExportTask;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jakarta.servlet.ServletContext;
 import org.springframework.web.context.WebApplicationContext;
+
 
 @Service
 public class ExportTaskManager {
@@ -86,6 +84,7 @@ public class ExportTaskManager {
         }
     }
 
+    /*
     private void writeDataToSheet(List<Map<String, Object>> data, Sheet sheet) {
         if (!data.isEmpty()) {
             Map<String, Object> firstRow = data.get(0);
@@ -108,5 +107,71 @@ public class ExportTaskManager {
                 sheet.autoSizeColumn(i);
             }
         }
+    }*/
+
+
+
+
+
+    // Metoda do zapisu danych do arkusza
+    private void writeDataToSheet(List<Map<String, Object>> data, Sheet sheet) {
+        if (!data.isEmpty()) {
+            Map<String, Object> firstRow = data.get(0);
+
+            // Utworzenie stylu dla nagłówków
+            Workbook workbook = sheet.getWorkbook();
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeightInPoints((short) 12);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            // Nazwy kolumn (zerowy wiersz)
+            Row columnNameRow = sheet.createRow(0);
+            int cellIdx = 0;
+            for (String column : firstRow.keySet()) {
+                Cell cell = columnNameRow.createCell(cellIdx++);
+                cell.setCellValue(column);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Źródło danych (pierwszy wiersz)
+            Row dataSourceRow = sheet.createRow(1);
+            cellIdx = 0;
+            for (String column : firstRow.keySet()) {
+                Cell cell = dataSourceRow.createCell(cellIdx++);
+                cell.setCellValue("TableName." + column);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Typ danych (drugi wiersz)
+            Row dataTypeRow = sheet.createRow(2);
+            cellIdx = 0;
+            for (Object value : firstRow.values()) {
+                Cell cell = dataTypeRow.createCell(cellIdx++);
+                cell.setCellValue(value != null ? value.getClass().getSimpleName() : "Unknown");
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Dane (od trzeciego wiersza)
+            int rowIdx = 3;
+            for (Map<String, Object> rowData : data) {
+                Row row = sheet.createRow(rowIdx++);
+                cellIdx = 0;
+                for (Object value : rowData.values()) {
+                    row.createCell(cellIdx++).setCellValue(value != null ? value.toString() : "");
+                }
+            }
+
+            // Automatyczne dostosowanie szerokości kolumn
+            for (int i = 0; i < firstRow.size(); i++) {
+                sheet.autoSizeColumn(i);
+            }
+        }
     }
 }
+

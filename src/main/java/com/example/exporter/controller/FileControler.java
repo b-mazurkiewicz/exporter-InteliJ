@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/export")
+@RequestMapping("/api")
 public class FileControler {
 
     private final ExportTaskManager taskManager;

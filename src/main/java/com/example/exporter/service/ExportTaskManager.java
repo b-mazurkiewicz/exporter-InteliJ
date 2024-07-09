@@ -112,7 +112,105 @@ public class ExportTaskManager {
 
 
 
+    private void writeDataToSheet(List<Map<String, Object>> data, Sheet sheet) {
+        if (!data.isEmpty()) {
+            Map<String, Object> firstRow = data.get(0);
+            
+            // Utworzenie stylu dla nagłówków
+            Workbook workbook = sheet.getWorkbook();
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeightInPoints((short) 12);
+            headerFont.setColor(IndexedColors.BLACK.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
 
+            // Utworzenie stylów dla różnych typów danych
+            CellStyle stringStyle = workbook.createCellStyle();
+            stringStyle.setDataFormat(workbook.createDataFormat().getFormat("@"));
+
+            CellStyle integerStyle = workbook.createCellStyle();
+            integerStyle.setDataFormat(workbook.createDataFormat().getFormat("0"));
+
+            CellStyle doubleStyle = workbook.createCellStyle();
+            doubleStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+
+            CellStyle dateStyle = workbook.createCellStyle();
+            dateStyle.setDataFormat(workbook.createDataFormat().getFormat("yyyy-MM-dd"));
+
+            // Nazwy kolumn (zerowy wiersz)
+            Row columnNameRow = sheet.createRow(0);
+            int cellIdx = 0;
+            for (String column : firstRow.keySet()) {
+                Cell cell = columnNameRow.createCell(cellIdx++);
+                cell.setCellValue(column);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Źródło danych (pierwszy wiersz)
+            Row dataSourceRow = sheet.createRow(1);
+            cellIdx = 0;
+            for (String column : firstRow.keySet()) {
+                Cell cell = dataSourceRow.createCell(cellIdx++);
+                cell.setCellValue("TableName." + column);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Typ danych (drugi wiersz)
+            Row dataTypeRow = sheet.createRow(2);
+            cellIdx = 0;
+            for (Object value : firstRow.values()) {
+                Cell cell = dataTypeRow.createCell(cellIdx++);
+                String dataType = value != null ? value.getClass().getSimpleName() : "Unknown";
+                cell.setCellValue(dataType);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Dane (od trzeciego wiersza)
+            int rowIdx = 3;
+            for (Map<String, Object> rowData : data) {
+                Row row = sheet.createRow(rowIdx++);
+                cellIdx = 0;
+                for (Object value : rowData.values()) {
+                    Cell cell = row.createCell(cellIdx++);
+                    if (value != null) {
+                        if (value instanceof String) {
+                            cell.setCellValue((String) value);
+                            cell.setCellStyle(stringStyle);
+                        } else if (value instanceof Integer) {
+                            cell.setCellValue((Integer) value);
+                            cell.setCellStyle(integerStyle);
+                        } else if (value instanceof Long) {
+                            cell.setCellValue((Long) value);
+                            cell.setCellStyle(integerStyle);
+                        } else if (value instanceof Double) {
+                            cell.setCellValue((Double) value);
+                            cell.setCellStyle(doubleStyle);
+                        } else if (value instanceof java.util.Date) {
+                            cell.setCellValue((java.util.Date) value);
+                            cell.setCellStyle(dateStyle);
+                        } else {
+                            cell.setCellValue(value.toString());
+                        }
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+            }
+
+            // Automatyczne dostosowanie szerokości kolumn
+            for (int i = 0; i < firstRow.size(); i++) {
+                sheet.autoSizeColumn(i);
+            }
+        }
+    }
+
+
+
+/*
     // Metoda do zapisu danych do arkusza
     private void writeDataToSheet(List<Map<String, Object>> data, Sheet sheet) {
         if (!data.isEmpty()) {
@@ -173,5 +271,7 @@ public class ExportTaskManager {
             }
         }
     }
+
+ */
 }
 

@@ -20,7 +20,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
-
 @RestController
 @RequestMapping("/api")
 public class FileControler {
@@ -97,12 +96,7 @@ public class FileControler {
             tableNames = Collections.singletonList(tableName);
         }
 
-        List<List<Map<String, Object>>> allData = new ArrayList<>();
-        for (String tableName : tableNames) {
-            allData.add(taskManager.getTableData(tableName));
-        }
-
         // Wywołaj metodę exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
-        taskManager.exportToExcel(allData, response, taskId);
+        taskManager.exportToExcel(tableNames, response, taskId);
     }
 }

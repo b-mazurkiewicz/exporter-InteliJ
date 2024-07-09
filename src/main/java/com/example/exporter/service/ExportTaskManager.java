@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import jakarta.servlet.ServletContext;
 import org.springframework.web.context.WebApplicationContext;
 
-
 @Service
 public class ExportTaskManager {
 
@@ -53,22 +52,23 @@ public class ExportTaskManager {
     }
 
     // Metoda do pobierania danych z listy tabel
-    public List<Map<String, Object>> getTableData(List<String> tableNames) {
-        List<Map<String, Object>> allData = new ArrayList<>();
+    public List<List<Map<String, Object>>> getAllTableData(List<String> tableNames) {
+        List<List<Map<String, Object>>> allData = new ArrayList<>();
         for (String tableName : tableNames) {
-            allData.addAll(getTableData(tableName));
+            List<Map<String, Object>> tableData = getTableData(tableName);
+            allData.add(tableData);
         }
         return allData;
     }
 
     // Metoda do eksportowania danych do pliku Excel
-    public void exportToExcel(List<List<Map<String, Object>>> data, HttpServletResponse response, String taskId) throws IOException {
+    public void exportToExcel(List<String> tableNames, HttpServletResponse response, String taskId) throws IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
-            int sheetNum = 1;
-            for (List<Map<String, Object>> tableData : data) {
-                String sheetName = "Data" + sheetNum++;
+            for (String tableName : tableNames) {
+                List<Map<String, Object>> tableData = getTableData(tableName);
+                String sheetName = tableName;
                 Sheet sheet = workbook.createSheet(sheetName);
-                writeDataToSheet(tableData, sheet);
+                writeDataToSheet(tableData, tableName, sheet);
             }
 
             // Ustawienia nagłówka i typu MIME w odpowiedzi HTTP
@@ -84,38 +84,11 @@ public class ExportTaskManager {
         }
     }
 
-    /*
-    private void writeDataToSheet(List<Map<String, Object>> data, Sheet sheet) {
+    // Metoda do zapisu danych do arkusza
+    private void writeDataToSheet(List<Map<String, Object>> data, String tableName, Sheet sheet) {
         if (!data.isEmpty()) {
             Map<String, Object> firstRow = data.get(0);
-            Row headerRow = sheet.createRow(0);
-            int cellIdx = 0;
-            for (String column : firstRow.keySet()) {
-                headerRow.createCell(cellIdx++).setCellValue(column);
-            }
 
-            int rowIdx = 1;
-            for (Map<String, Object> rowData : data) {
-                Row row = sheet.createRow(rowIdx++);
-                cellIdx = 0;
-                for (Object value : rowData.values()) {
-                    row.createCell(cellIdx++).setCellValue(value != null ? value.toString() : "");
-                }
-            }
-
-            for (int i = 0; i < firstRow.size(); i++) {
-                sheet.autoSizeColumn(i);
-            }
-        }
-    }*/
-
-
-
-
-    private void writeDataToSheet(List<Map<String, Object>> data, Sheet sheet) {
-        if (!data.isEmpty()) {
-            Map<String, Object> firstRow = data.get(0);
-            
             // Utworzenie stylu dla nagłówków
             Workbook workbook = sheet.getWorkbook();
             CellStyle headerStyle = workbook.createCellStyle();
@@ -146,7 +119,7 @@ public class ExportTaskManager {
             int cellIdx = 0;
             for (String column : firstRow.keySet()) {
                 Cell cell = columnNameRow.createCell(cellIdx++);
-                cell.setCellValue(column);
+                cell.setCellValue(column); // Użyj nazwy tabeli
                 cell.setCellStyle(headerStyle);
             }
 
@@ -155,7 +128,7 @@ public class ExportTaskManager {
             cellIdx = 0;
             for (String column : firstRow.keySet()) {
                 Cell cell = dataSourceRow.createCell(cellIdx++);
-                cell.setCellValue("TableName." + column);
+                cell.setCellValue(tableName + "." + column); // Użyj nazwy tabeli
                 cell.setCellStyle(headerStyle);
             }
 
@@ -164,7 +137,7 @@ public class ExportTaskManager {
             cellIdx = 0;
             for (Object value : firstRow.values()) {
                 Cell cell = dataTypeRow.createCell(cellIdx++);
-                String dataType = value != null ? value.getClass().getSimpleName() : "Unknown";
+                String dataType = determineDataType(value);
                 cell.setCellValue(dataType);
                 cell.setCellStyle(headerStyle);
             }
@@ -176,28 +149,7 @@ public class ExportTaskManager {
                 cellIdx = 0;
                 for (Object value : rowData.values()) {
                     Cell cell = row.createCell(cellIdx++);
-                    if (value != null) {
-                        if (value instanceof String) {
-                            cell.setCellValue((String) value);
-                            cell.setCellStyle(stringStyle);
-                        } else if (value instanceof Integer) {
-                            cell.setCellValue((Integer) value);
-                            cell.setCellStyle(integerStyle);
-                        } else if (value instanceof Long) {
-                            cell.setCellValue((Long) value);
-                            cell.setCellStyle(integerStyle);
-                        } else if (value instanceof Double) {
-                            cell.setCellValue((Double) value);
-                            cell.setCellStyle(doubleStyle);
-                        } else if (value instanceof java.util.Date) {
-                            cell.setCellValue((java.util.Date) value);
-                            cell.setCellStyle(dateStyle);
-                        } else {
-                            cell.setCellValue(value.toString());
-                        }
-                    } else {
-                        cell.setCellValue("");
-                    }
+                    setCellValueAndStyle(cell, value, stringStyle, integerStyle, doubleStyle, dateStyle);
                 }
             }
 
@@ -208,70 +160,42 @@ public class ExportTaskManager {
         }
     }
 
-
-
-/*
-    // Metoda do zapisu danych do arkusza
-    private void writeDataToSheet(List<Map<String, Object>> data, Sheet sheet) {
-        if (!data.isEmpty()) {
-            Map<String, Object> firstRow = data.get(0);
-
-            // Utworzenie stylu dla nagłówków
-            Workbook workbook = sheet.getWorkbook();
-            CellStyle headerStyle = workbook.createCellStyle();
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerFont.setFontHeightInPoints((short) 12);
-            headerFont.setColor(IndexedColors.WHITE.getIndex());
-            headerStyle.setFont(headerFont);
-            headerStyle.setFillForegroundColor(IndexedColors.BLUE.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setAlignment(HorizontalAlignment.CENTER);
-
-            // Nazwy kolumn (zerowy wiersz)
-            Row columnNameRow = sheet.createRow(0);
-            int cellIdx = 0;
-            for (String column : firstRow.keySet()) {
-                Cell cell = columnNameRow.createCell(cellIdx++);
-                cell.setCellValue(column);
-                cell.setCellStyle(headerStyle);
-            }
-
-            // Źródło danych (pierwszy wiersz)
-            Row dataSourceRow = sheet.createRow(1);
-            cellIdx = 0;
-            for (String column : firstRow.keySet()) {
-                Cell cell = dataSourceRow.createCell(cellIdx++);
-                cell.setCellValue("TableName." + column);
-                cell.setCellStyle(headerStyle);
-            }
-
-            // Typ danych (drugi wiersz)
-            Row dataTypeRow = sheet.createRow(2);
-            cellIdx = 0;
-            for (Object value : firstRow.values()) {
-                Cell cell = dataTypeRow.createCell(cellIdx++);
-                cell.setCellValue(value != null ? value.getClass().getSimpleName() : "Unknown");
-                cell.setCellStyle(headerStyle);
-            }
-
-            // Dane (od trzeciego wiersza)
-            int rowIdx = 3;
-            for (Map<String, Object> rowData : data) {
-                Row row = sheet.createRow(rowIdx++);
-                cellIdx = 0;
-                for (Object value : rowData.values()) {
-                    row.createCell(cellIdx++).setCellValue(value != null ? value.toString() : "");
-                }
-            }
-
-            // Automatyczne dostosowanie szerokości kolumn
-            for (int i = 0; i < firstRow.size(); i++) {
-                sheet.autoSizeColumn(i);
-            }
+    // Metoda do określania typu danych
+    private String determineDataType(Object value) {
+        if (value instanceof String) {
+            return "String";
+        } else if (value instanceof Integer || value instanceof Long) {
+            return "Integer";
+        } else if (value instanceof Double) {
+            return "Double";
+        } else if (value instanceof java.util.Date) {
+            return "Date";
+        } else {
+            return "Unknown";
         }
     }
 
- */
+    // Metoda do ustawiania wartości komórki i stylu
+    private void setCellValueAndStyle(Cell cell, Object value, CellStyle stringStyle, CellStyle integerStyle,
+                                      CellStyle doubleStyle, CellStyle dateStyle) {
+        if (value != null) {
+            if (value instanceof String) {
+                cell.setCellValue((String) value);
+                cell.setCellStyle(stringStyle);
+            } else if (value instanceof Integer || value instanceof Long) {
+                cell.setCellValue(((Number) value).doubleValue()); // Konwersja na Double, ponieważ Excel nie obsługuje bezpośrednio typów całkowitych
+                cell.setCellStyle(integerStyle);
+            } else if (value instanceof Double) {
+                cell.setCellValue((Double) value);
+                cell.setCellStyle(doubleStyle);
+            } else if (value instanceof java.util.Date) {
+                cell.setCellValue((java.util.Date) value);
+                cell.setCellStyle(dateStyle);
+            } else {
+                cell.setCellValue(value.toString());
+            }
+        } else {
+            cell.setCellValue("");
+        }
+    }
 }
-

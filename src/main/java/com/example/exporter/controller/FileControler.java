@@ -58,11 +58,12 @@ public class FileControler {
 
     // Mapping do sprawdzania statusu zadania na podstawie ID
     @GetMapping("/status/{taskId}")
-    public ResponseEntity<ExportTask> getStatus(@PathVariable String taskId) {
+    public ResponseEntity<ExportTask> getStatus(@PathVariable String taskId, HttpServletResponse response) throws IOException {
         ExportTask task = taskManager.getTask(taskId);
         if (task != null) {
             return ResponseEntity.ok(task);
         } else {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Task not found");
             return ResponseEntity.notFound().build();
         }
     }

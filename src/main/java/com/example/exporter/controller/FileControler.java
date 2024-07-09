@@ -1,9 +1,6 @@
 package com.example.exporter.controller;
 
-import com.example.exporter.model.Address;
-import com.example.exporter.model.Company;
-import com.example.exporter.model.ExportTask;
-import com.example.exporter.model.User;
+import com.example.exporter.model.*;
 import com.example.exporter.service.ExportTaskManager;
 import com.example.exporter.service.UserService;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -22,21 +19,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/export")
 public class FileControler {
 
-    private final UserService userService;
     private final ExportTaskManager taskManager;
 
     @Autowired
-    public FileControler(UserService userService, ExportTaskManager taskManager) {
-        this.userService = userService;
+    public FileControler(ExportTaskManager taskManager) {
         this.taskManager = taskManager;
     }
 
@@ -51,7 +43,25 @@ public class FileControler {
     @GetMapping("/export/{tableName}")
     public ResponseEntity<String> startExportTask(@PathVariable String tableName) {
         String taskId = UUID.randomUUID().toString();
-        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", tableName);
+        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", Collections.singletonList(tableName));
+        taskManager.addTask(task);
+        return ResponseEntity.ok(taskId);
+    }
+
+    // Mapping do rozpoczęcia zadania eksportu
+    @PostMapping("/export")
+    public ResponseEntity<String> startExportTask(@RequestBody ExportTaskRequest request) {
+        String taskId = UUID.randomUUID().toString();
+        ExportTask task;
+
+        if (request.getTableName() != null) {
+            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableName());
+        } else if (request.getTableNames() != null && !request.getTableNames().isEmpty()) {
+            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableNames());
+        } else {
+            return ResponseEntity.badRequest().body("No valid table name(s) provided.");
+        }
+
         taskManager.addTask(task);
         return ResponseEntity.ok(taskId);
     }
@@ -77,40 +87,22 @@ public class FileControler {
             return;
         }
 
-        String tableName = exportTask.getTableName();
-        List<Map<String, Object>> data = taskManager.getTableData(tableName);
-
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        String headerKey = "Content-Disposition";
-        String headerValue = "attachment; filename=Export_" + taskId + ".xlsx";
-        response.setHeader(headerKey, headerValue);
-
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Data");
-
-        if (!data.isEmpty()) {
-            XSSFRow headerRow = sheet.createRow(0);
-            Map<String, Object> firstRow = data.get(0);
-            int cellIdx = 0;
-            for (String column : firstRow.keySet()) {
-                headerRow.createCell(cellIdx++).setCellValue(column);
+        List<String> tableNames = exportTask.getTableNames();
+        if (tableNames == null || tableNames.isEmpty()) {
+            String tableName = exportTask.getTableName();
+            if (tableName == null) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Table name is null");
+                return;
             }
-
-            int rowIdx = 1;
-            for (Map<String, Object> rowData : data) {
-                XSSFRow row = sheet.createRow(rowIdx++);
-                cellIdx = 0;
-                for (Object value : rowData.values()) {
-                    row.createCell(cellIdx++).setCellValue(value != null ? value.toString() : "");
-                }
-            }
-
-            for (int i = 0; i < firstRow.size(); i++) {
-                sheet.autoSizeColumn(i);
-            }
+            tableNames = Collections.singletonList(tableName);
         }
 
-        workbook.write(response.getOutputStream());
-        workbook.close();
+        List<List<Map<String, Object>>> allData = new ArrayList<>();
+        for (String tableName : tableNames) {
+            allData.add(taskManager.getTableData(tableName));
+        }
+
+        // Wywołaj metodę exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
+        taskManager.exportToExcel(allData, response, taskId);
     }
 }

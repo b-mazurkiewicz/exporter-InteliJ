@@ -21,9 +21,6 @@ public class Company {
     @Column(name = "company_name")
     private String companyName;
 
-    //@Column(name = "street")
-    //private String street;
-
     @Column(name = "city")
     private String city;
 

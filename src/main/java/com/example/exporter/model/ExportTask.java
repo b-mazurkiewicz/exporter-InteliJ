@@ -4,6 +4,8 @@ import lombok.*;
 import jakarta.servlet.ServletContext;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
+
 // Klasa reprezentująca zadanie eksportu
 @Data
 @NoArgsConstructor
@@ -11,7 +13,21 @@ import org.springframework.web.context.WebApplicationContext;
 @Getter
 @Setter
 public class ExportTask {
-    private String taskId;  // Unikalny identyfikator zadania
-    private String status;  // Status zadania (IN_PROGRESS, COMPLETED, FAILED)
-    private String filePath; // Ścieżka do wygenerowanego pliku
+
+    private String taskId;
+    private String status;
+    private String tableName;
+    private List<String> tableNames;
+
+    public ExportTask(String taskId, String status, String tableName) {
+        this.taskId = taskId;
+        this.status = status;
+        this.tableName = tableName;
+    }
+
+    public ExportTask(String taskId, String status, List<String> tableNames) {
+        this.taskId = taskId;
+        this.status = status;
+        this.tableNames = tableNames;
+    }
 }

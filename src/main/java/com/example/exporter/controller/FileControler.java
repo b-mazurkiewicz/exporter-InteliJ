@@ -47,23 +47,32 @@ public class FileControler {
         return ResponseEntity.ok(taskId);
     }
 
-    // Mapping do rozpoczęcia zadania eksportu
+//    // Mapping do rozpoczęcia zadania eksportu
+//    @PostMapping("/export")
+//    public ResponseEntity<String> startExportTask(@RequestBody ExportTaskRequest request) {
+//        String taskId = UUID.randomUUID().toString();
+//        ExportTask task;
+//
+//        if (request.getTableName() != null) {
+//            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableName());
+//        } else if (request.getTableNames() != null && !request.getTableNames().isEmpty()) {
+//            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableNames());
+//        } else {
+//            return ResponseEntity.badRequest().body("No valid table name(s) provided.");
+//        }
+//
+//        taskManager.addTask(task);
+//        return ResponseEntity.ok(taskId);
+//    }
+
     @PostMapping("/export")
-    public ResponseEntity<String> startExportTask(@RequestBody ExportTaskRequest request) {
+    public ResponseEntity<String> startExportTask(@RequestBody List<String> tableNames) {
         String taskId = UUID.randomUUID().toString();
-        ExportTask task;
-
-        if (request.getTableName() != null) {
-            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableName());
-        } else if (request.getTableNames() != null && !request.getTableNames().isEmpty()) {
-            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableNames());
-        } else {
-            return ResponseEntity.badRequest().body("No valid table name(s) provided.");
-        }
-
+        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", tableNames);
         taskManager.addTask(task);
         return ResponseEntity.ok(taskId);
     }
+
 
     // Mapping do sprawdzania statusu zadania na podstawie ID
     @GetMapping("/status/{taskId}")

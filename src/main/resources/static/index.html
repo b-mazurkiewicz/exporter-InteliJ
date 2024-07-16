@@ -7,9 +7,18 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Export Tables</h1>
-<ul id="tableList"></ul> <!-- Ten element będzie zawierał checkboxy -->
-<button id="exportTables">Eksportuj zaznaczone tabele</button>
+<div class="container">
+    <h1>Export Tables</h1>
+    <ul id="tableList">
+        <!-- Example list item with checkbox -->
+        <li>
+            <input type="checkbox" id="table1">
+            <label for="table1">Table 1</label>
+        </li>
+        <!-- Add more list items as needed -->
+    </ul>
+    <button id="exportTables">Export Selected Tables</button>
+</div>
 <script src="script.js"></script>
 </body>
 </html>

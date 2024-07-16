@@ -1,24 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Export Tables</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Table Exporter</title>
 </head>
 <body>
-<div class="container">
-    <h1>Export Tables</h1>
-    <ul id="tableList">
-        <!-- Example list item with checkbox -->
-        <li>
-            <input type="checkbox" id="table1">
-            <label for="table1">Table 1</label>
-        </li>
-        <!-- Add more list items as needed -->
-    </ul>
-    <button id="exportTables">Export Selected Tables</button>
-</div>
-<script src="script.js"></script>
+<h1>Table Exporter</h1>
+<ul id="tableList"></ul>
+<button id="customButton">Custom</button>
+<button id="exportButton">Export</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/tables')
+            .then(response => response.json())
+            .then(data => {
+                const tableList = document.getElementById('tableList');
+                tableList.innerHTML = '';
+
+                data.forEach(table => {
+                    const li = document.createElement('li');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = table;
+                    checkbox.value = table;
+                    checkbox.name = 'tables';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = table;
+                    label.textContent = table;
+
+                    li.appendChild(checkbox);
+                    li.appendChild(label);
+                    tableList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error fetching tables:', error));
+
+        document.getElementById('customButton').addEventListener('click', function() {
+            const selectedTables = [];
+            document.querySelectorAll('input[name="tables"]:checked').forEach(checkbox => {
+                selectedTables.push(checkbox.value);
+            });
+
+            if (selectedTables.length > 0) {
+                localStorage.setItem('selectedTables', JSON.stringify(selectedTables));
+                window.location.href = 'custom.html';
+            } else {
+                alert('Please select at least one table.');
+            }
+        });
+
+        document.getElementById('exportButton').addEventListener('click', function() {
+            const selectedTables = [];
+            document.querySelectorAll('input[name="tables"]:checked').forEach(checkbox => {
+                selectedTables.push(checkbox.value);
+            });
+
+            if (selectedTables.length > 0) {
+                fetch('/api/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(selectedTables)
+                })
+                    .then(response => response.text())
+                    .then(taskId => {
+                        console.log('Export started. Task ID:', taskId);
+
+                        fetch(`/api/excel/${taskId}`)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `export-${taskId}.xlsx`;
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                            })
+                            .catch(error => console.error('Error downloading Excel file:', error));
+                    })
+                    .catch(error => console.error('Error exporting tables:', error));
+            } else {
+                alert('Please select at least one table.');
+            }
+        });
+    });
+</script>
 </body>
 </html>

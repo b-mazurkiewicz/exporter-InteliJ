@@ -31,6 +31,17 @@ public class FileControler {
         this.taskManager = taskManager;
     }
 
+    //Mapping do wyswietlania wszystkich kolumn z wybranych wczesniej tabel
+    @GetMapping("/columns")
+    public ResponseEntity<Map<String, List<String>>> getColumnsForTables(@RequestParam List<String> tableNames) {
+        Map<String, List<String>> columnsForTables = new HashMap<>();
+        for (String tableName : tableNames) {
+            List<String> columns = taskManager.getColumnsForTable(tableName);
+            columnsForTables.put(tableName, columns);
+        }
+        return ResponseEntity.ok(columnsForTables);
+    }
+
     // Mapping do wyświetlania wszystkich tabel i widoków
     @GetMapping("/tables")
     public ResponseEntity<List<String>> getAllTablesAndViews() {
@@ -87,6 +98,30 @@ public class FileControler {
     }
 
     // Mapping do pobierania pliku Excel na podstawie ID zadania
+//    @GetMapping("/excel/{taskId}")
+//    public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
+//        ExportTask exportTask = taskManager.getTask(taskId);
+//        if (exportTask == null) {
+//            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Task not found");
+//            return;
+//        }
+//
+//        List<String> tableNames = exportTask.getTableNames();
+//        if (tableNames == null || tableNames.isEmpty()) {
+//            String tableName = exportTask.getTableName();
+//            if (tableName == null) {
+//                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Table name is null");
+//                return;
+//            }
+//            tableNames = Collections.singletonList(tableName);
+//        }
+//
+//        // Wywołaj metodę exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
+//        taskManager.exportToExcel(tableNames, response, taskId);
+//    }
+
+
+    //bardzo dziwna sytuacja ze musze pisac komentarz w kodzie lololol
     @GetMapping("/excel/{taskId}")
     public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
         ExportTask exportTask = taskManager.getTask(taskId);
@@ -97,15 +132,10 @@ public class FileControler {
 
         List<String> tableNames = exportTask.getTableNames();
         if (tableNames == null || tableNames.isEmpty()) {
-            String tableName = exportTask.getTableName();
-            if (tableName == null) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Table name is null");
-                return;
-            }
-            tableNames = Collections.singletonList(tableName);
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Table names are missing");
+            return;
         }
 
-        // Wywołaj metodę exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
         taskManager.exportToExcel(tableNames, response, taskId);
     }
 }

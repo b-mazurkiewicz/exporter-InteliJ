@@ -61,4 +61,18 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Proszę zaznaczyć co najmniej jedną tabelę do eksportu.');
         }
     });
+
+    document.getElementById('customExport').addEventListener('click', function() {
+        const selectedTables = [];
+        document.querySelectorAll('input[name="tables"]:checked').forEach(checkbox => {
+            selectedTables.push(checkbox.value);
+        });
+
+        if (selectedTables.length > 0) {
+            localStorage.setItem('selectedTables', JSON.stringify(selectedTables));
+            window.location.href = 'custom.html';
+        } else {
+            alert('Proszę zaznaczyć co najmniej jedną tabelę do eksportu.');
+        }
+    });
 });

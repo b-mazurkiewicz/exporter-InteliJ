@@ -1,6 +1,7 @@
 package com.example.exporter.service;
 
 import com.example.exporter.model.ExportTask;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -27,6 +28,50 @@ public class ExportTaskManager {
     @Autowired
     public ExportTaskManager(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    // Nowa metoda do eksportu do Excela
+    public void exportToExcel(List<String> tableNames, HttpServletResponse response, String taskId) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            for (String tableName : tableNames) {
+                Sheet sheet = workbook.createSheet(tableName);
+                List<String> columns = getColumnsForTable(tableName);
+
+                Row headerRow = sheet.createRow(0);
+                for (int i = 0; i < columns.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(columns.get(i));
+                }
+
+                String query = String.format("SELECT * FROM %s", tableName);
+                List<Map<String, Object>> rows = jdbcTemplate.queryForList(query);
+
+                int rowIndex = 1;
+                for (Map<String, Object> row : rows) {
+                    Row dataRow = sheet.createRow(rowIndex++);
+                    int colIndex = 0;
+                    for (String column : columns) {
+                        Cell cell = dataRow.createCell(colIndex++);
+                        Object value = row.get(column);
+                        if (value != null) {
+                            cell.setCellValue(value.toString());
+                        }
+                    }
+                }
+            }
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=export-" + taskId + ".xlsx");
+
+            try (ServletOutputStream outputStream = response.getOutputStream()) {
+                workbook.write(outputStream);
+            }
+        }
+    }
+
+    public List<String> getColumnsForTable(String tableName) {
+        String query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?";
+        return jdbcTemplate.queryForList(query, new Object[]{tableName}, String.class);
     }
 
     // Metoda do dodawania nowego zadania eksportu do mapy zadań
@@ -61,28 +106,28 @@ public class ExportTaskManager {
         return allData;
     }
 
-    // Metoda do eksportowania danych do pliku Excel
-    public void exportToExcel(List<String> tableNames, HttpServletResponse response, String taskId) throws IOException {
-        try (Workbook workbook = new XSSFWorkbook()) {
-            for (String tableName : tableNames) {
-                List<Map<String, Object>> tableData = getTableData(tableName);
-                String sheetName = tableName;
-                Sheet sheet = workbook.createSheet(sheetName);
-                writeDataToSheet(tableData, tableName, sheet);
-            }
-
-            // Ustawienia nagłówka i typu MIME w odpowiedzi HTTP
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            String headerKey = "Content-Disposition";
-            String headerValue = "attachment; filename=Export_" + taskId + ".xlsx";
-            response.setHeader(headerKey, headerValue);
-
-            // Zapisz workbook do odpowiedzi HTTP
-            try (OutputStream outputStream = response.getOutputStream()) {
-                workbook.write(outputStream);
-            }
-        }
-    }
+//     Metoda do eksportowania danych do pliku Excel
+//    public void exportToExcel(List<String> tableNames, HttpServletResponse response, String taskId) throws IOException {
+//        try (Workbook workbook = new XSSFWorkbook()) {
+//            for (String tableName : tableNames) {
+//                List<Map<String, Object>> tableData = getTableData(tableName);
+//                String sheetName = tableName;
+//                Sheet sheet = workbook.createSheet(sheetName);
+//                writeDataToSheet(tableData, tableName, sheet);
+//            }
+//
+//            // Ustawienia nagłówka i typu MIME w odpowiedzi HTTP
+//            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+//            String headerKey = "Content-Disposition";
+//            String headerValue = "attachment; filename=Export_" + taskId + ".xlsx";
+//            response.setHeader(headerKey, headerValue);
+//
+//            // Zapisz workbook do odpowiedzi HTTP
+//            try (OutputStream outputStream = response.getOutputStream()) {
+//                workbook.write(outputStream);
+//            }
+//        }
+//    }
 
     // Metoda do zapisu danych do arkusza
     private void writeDataToSheet(List<Map<String, Object>> data, String tableName, Sheet sheet) {

@@ -3,6 +3,7 @@ package com.example.exporter.service;
 import com.example.exporter.model.ExportTask;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +25,8 @@ import org.springframework.web.context.WebApplicationContext;
 public class ExportTaskManager {
 
     private final Map<String, ExportTask> tasks = new ConcurrentHashMap<>();
+    // Getter for JdbcTemplate
+    @Getter
     private final JdbcTemplate jdbcTemplate;
 
     @Autowired
@@ -30,7 +34,7 @@ public class ExportTaskManager {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-//    public
+    //    public
 //    List<String> getTableColumns (String tableName) {
 //        String query = String.format(
 //                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s'"
@@ -81,9 +85,15 @@ public class ExportTaskManager {
         }
     }
 
-    public List<String> getColumnsForTable(String tableName) {
-        String query = String.format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s'", tableName);
-        return jdbcTemplate.query(query, (rs, rowNum) -> rs.getString("COLUMN_NAME"));
+    public Map<String, List<String>> getColumnsForTables(List<String> tableNames) {
+        Map<String, List<String>> columnsForTables = new HashMap<>();
+        for (String tableName : tableNames) {
+            ExportTask task = new ExportTask();
+            task.setTableName(tableName);
+            List<String> columns = task.getTableColumns(jdbcTemplate);
+            columnsForTables.put(tableName, columns);
+        }
+        return columnsForTables;
     }
 
     // Metoda do dodawania nowego zadania eksportu do mapy zadań

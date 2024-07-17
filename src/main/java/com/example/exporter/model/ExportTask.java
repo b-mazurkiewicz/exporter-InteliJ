@@ -21,17 +21,20 @@ public class ExportTask {
     private String status;
     private String tableName;
     private List<String> tableNames;
+    private JdbcTemplate jdbcTemplate;
 
-    public ExportTask(String taskId, String status, String tableName) {
+    public ExportTask(String taskId, String status, String tableName, JdbcTemplate jdbcTemplate) {
         this.taskId = taskId;
         this.status = status;
         this.tableName = tableName;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public ExportTask(String taskId, String status, List<String> tableNames) {
+    public ExportTask(String taskId, String status, List<String> tableNames, JdbcTemplate jdbcTemplate) {
         this.taskId = taskId;
         this.status = status;
         this.tableNames = tableNames;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public List<String> getTableColumns(JdbcTemplate jdbcTemplate) {

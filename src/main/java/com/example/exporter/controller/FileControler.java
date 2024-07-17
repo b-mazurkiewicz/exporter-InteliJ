@@ -9,10 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -34,8 +31,10 @@ public class FileControler {
     @PostMapping("/export")
     public ResponseEntity<String> startExportTask(@RequestBody Map<String, List<String>> tableColumns) {
         String taskId = UUID.randomUUID().toString();
-        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", new ArrayList<>(tableColumns.keySet()), taskManager.getJdbcTemplate());
-        taskManager.addTask(task);
+        ExportTask exportTask = new ExportTask(taskId, "IN_PROGRESS", new ArrayList<>(), new HashMap<>());
+        exportTask.setTableNames(new ArrayList<>(tableColumns.keySet()));
+        exportTask.setTableColumns(tableColumns);
+        taskManager.addTask(exportTask);
         return ResponseEntity.ok(taskId);
     }
 
@@ -49,6 +48,26 @@ public class FileControler {
             return ResponseEntity.notFound().build();
         }
     }
+
+
+    @GetMapping("/excel/{taskId}")
+    public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
+        ExportTask exportTask = taskManager.getTask(taskId);
+        if (exportTask == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Task not found");
+            return;
+        }
+
+        Map<String, List<String>> tableColumns = exportTask.getTableColumns(); // Ensure getTableColumns uses JdbcTemplate
+        if (tableColumns == null || tableColumns.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No tables or columns selected");
+            return;
+        }
+
+        taskManager.exportToExcel(tableColumns, response, taskId);
+    }
+
+
 
 //    @GetMapping("/excel/{taskId}")
 //    public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {

@@ -44,24 +44,29 @@ public class ExportTaskManager {
 //                )); }
 
 
-    // Nowa metoda do eksportu do Excela
+
+    //NOWA metoda exportu do excela
     public void exportToExcel(Map<String, List<String>> tableColumns, HttpServletResponse response, String taskId) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             for (Map.Entry<String, List<String>> entry : tableColumns.entrySet()) {
                 String tableName = entry.getKey();
                 List<String> columns = entry.getValue();
 
+                // Create a sheet for each table
                 Sheet sheet = workbook.createSheet(tableName);
 
+                // Create a header row with the selected column names
                 Row headerRow = sheet.createRow(0);
                 for (int i = 0; i < columns.size(); i++) {
                     Cell cell = headerRow.createCell(i);
                     cell.setCellValue(columns.get(i));
                 }
 
+                // Query the database to retrieve the data for the selected columns
                 String query = String.format("SELECT %s FROM %s", String.join(", ", columns), tableName);
                 List<Map<String, Object>> rows = jdbcTemplate.queryForList(query);
 
+                // Write the data to the sheet
                 int rowIndex = 1;
                 for (Map<String, Object> row : rows) {
                     Row dataRow = sheet.createRow(rowIndex++);
@@ -76,14 +81,58 @@ public class ExportTaskManager {
                 }
             }
 
+            // Set the response headers and write the workbook to the response
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename=export-" + taskId + ".xlsx");
-
             try (ServletOutputStream outputStream = response.getOutputStream()) {
                 workbook.write(outputStream);
             }
         }
     }
+
+
+
+
+    // stara metoda do eksportu do Excela
+//    public void exportToExcel(Map<String, List<String>> tableColumns, HttpServletResponse response, String taskId) throws IOException {
+//        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+//            for (Map.Entry<String, List<String>> entry : tableColumns.entrySet()) {
+//                String tableName = entry.getKey();
+//                List<String> columns = entry.getValue();
+//
+//                Sheet sheet = workbook.createSheet(tableName);
+//
+//                Row headerRow = sheet.createRow(0);
+//                for (int i = 0; i < columns.size(); i++) {
+//                    Cell cell = headerRow.createCell(i);
+//                    cell.setCellValue(columns.get(i));
+//                }
+//
+//                String query = String.format("SELECT %s FROM %s", String.join(", ", columns), tableName);
+//                List<Map<String, Object>> rows = jdbcTemplate.queryForList(query);
+//
+//                int rowIndex = 1;
+//                for (Map<String, Object> row : rows) {
+//                    Row dataRow = sheet.createRow(rowIndex++);
+//                    int colIndex = 0;
+//                    for (String column : columns) {
+//                        Cell cell = dataRow.createCell(colIndex++);
+//                        Object value = row.get(column);
+//                        if (value != null) {
+//                            cell.setCellValue(value.toString());
+//                        }
+//                    }
+//                }
+//            }
+//
+//            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+//            response.setHeader("Content-Disposition", "attachment; filename=export-" + taskId + ".xlsx");
+//
+//            try (ServletOutputStream outputStream = response.getOutputStream()) {
+//                workbook.write(outputStream);
+//            }
+//        }
+//    }
 
     public Map<String, List<String>> getColumnsForTables(List<String> tableNames) {
         Map<String, List<String>> columnsForTables = new HashMap<>();

@@ -1,48 +1,57 @@
 package com.example.exporter.model;
 
-import com.example.exporter.service.ExportTaskManager;
-import lombok.*;
-import jakarta.servlet.ServletContext;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.context.WebApplicationContext;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-// Klasa reprezentująca zadanie eksportu
+@Entity
+@Table(name = "export_tasks")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
 public class ExportTask {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    private String status;
 
     private String taskId;
-    private String status;
-    private String tableName;
+
+    @ElementCollection
     private List<String> tableNames;
-    private JdbcTemplate jdbcTemplate;
 
-    public ExportTask(String taskId, String status, String tableName, JdbcTemplate jdbcTemplate) {
-        this.taskId = taskId;
-        this.status = status;
-        this.tableName = tableName;
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    @OneToMany(mappedBy = "exportTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TableColumn> tableColumns;
 
-    public ExportTask(String taskId, String status, List<String> tableNames, JdbcTemplate jdbcTemplate) {
+
+    // ... other methods
+
+    public ExportTask(String taskId, String status, List<String> tableNames, Map<String, List<String>> tableColumns) {
         this.taskId = taskId;
         this.status = status;
         this.tableNames = tableNames;
-        this.jdbcTemplate = jdbcTemplate;
+        this.tableColumns = tableColumns;
     }
 
-    public List<String> getTableColumns(JdbcTemplate jdbcTemplate) {
-        if (this.tableName == null || this.tableName.isEmpty()) {
-            throw new IllegalArgumentException("Table name is null or empty");
+    public Map<String, List<String>> getTableColumns() {
+        Map<String, List<String>> tableColumns = new HashMap<>();
+        for (String tableName : tableNames) {
+            List<String> columns = jdbcTemplate.queryForList(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = ?",
+                    String.class, tableName).stream().toList();
+            tableColumns.put(tableName, columns);
         }
-        String query = String.format((
-                        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s'"), this.tableName);
-        return jdbcTemplate.query(query, (rs, rowNum) -> rs.getString("COLUMN_NAME"));
+        return tableColumns;
     }
+
+
 }

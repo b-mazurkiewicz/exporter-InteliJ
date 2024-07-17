@@ -1,3 +1,12 @@
+CREATE TABLE table_columns (
+                               id SERIAL PRIMARY KEY,
+                               export_task_id BIGINT NOT NULL,
+                               table_name VARCHAR(255) NOT NULL,
+                               column_name VARCHAR(255) NOT NULL,
+                               FOREIGN KEY (export_task_id) REFERENCES export_tasks(id)
+);
+
+
 /*
 -- Tworzenie tabeli Address
 CREATE TABLE IF NOT EXISTS Address (

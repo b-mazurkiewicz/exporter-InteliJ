@@ -2,3 +2,8 @@ public List<String> getColumnsForTable(String tableName) {
         String query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?";
         return jdbcTemplate.queryForList(query, new Object[]{tableName}, String.class);
     }
+
+
+
+
+    Tworzę projekt aplikacji webowej która ma pobierać dane z bazy danych, a następnie konwertować i formatować je do pliku Excela. Aktualnie muszę napisać mapping który pozwoli mi na eksportowania tylko wybranych kolumn z danej tabeli. Aktualny kod to:

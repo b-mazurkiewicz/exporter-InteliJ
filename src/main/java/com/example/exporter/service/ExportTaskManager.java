@@ -30,12 +30,24 @@ public class ExportTaskManager {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+//    public
+//    List<String> getTableColumns (String tableName) {
+//        String query = String.format(
+//                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s'"
+//                , tableName);
+//        return jdbcTemplate.query(query, (rs, rowNum) -> rs.getString(
+//                        "COLUMN_NAME"
+//                )); }
+
+
     // Nowa metoda do eksportu do Excela
-    public void exportToExcel(List<String> tableNames, HttpServletResponse response, String taskId) throws IOException {
+    public void exportToExcel(Map<String, List<String>> tableColumns, HttpServletResponse response, String taskId) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            for (String tableName : tableNames) {
+            for (Map.Entry<String, List<String>> entry : tableColumns.entrySet()) {
+                String tableName = entry.getKey();
+                List<String> columns = entry.getValue();
+
                 Sheet sheet = workbook.createSheet(tableName);
-                List<String> columns = getColumnsForTable(tableName);
 
                 Row headerRow = sheet.createRow(0);
                 for (int i = 0; i < columns.size(); i++) {
@@ -43,7 +55,7 @@ public class ExportTaskManager {
                     cell.setCellValue(columns.get(i));
                 }
 
-                String query = String.format("SELECT * FROM %s", tableName);
+                String query = String.format("SELECT %s FROM %s", String.join(", ", columns), tableName);
                 List<Map<String, Object>> rows = jdbcTemplate.queryForList(query);
 
                 int rowIndex = 1;
@@ -70,8 +82,8 @@ public class ExportTaskManager {
     }
 
     public List<String> getColumnsForTable(String tableName) {
-        String query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?";
-        return jdbcTemplate.queryForList(query, new Object[]{tableName}, String.class);
+        String query = String.format("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s'", tableName);
+        return jdbcTemplate.query(query, (rs, rowNum) -> rs.getString("COLUMN_NAME"));
     }
 
     // Metoda do dodawania nowego zadania eksportu do mapy zadań

@@ -57,12 +57,17 @@
             });
 
             if (selectedTables.length > 0) {
+                const tableColumns = selectedTables.reduce((obj, table) => {
+                    obj[table] = []; // This assumes exporting all columns for selected tables
+                    return obj;
+                }, {});
+
                 fetch('/api/export', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(selectedTables)
+                    body: JSON.stringify(tableColumns)
                 })
                     .then(response => response.text())
                     .then(taskId => {

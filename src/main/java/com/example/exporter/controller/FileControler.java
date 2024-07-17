@@ -58,31 +58,31 @@ public class FileControler {
         return ResponseEntity.ok(taskId);
     }
 
-//    // Mapping do rozpoczęcia zadania eksportu
-//    @PostMapping("/export")
-//    public ResponseEntity<String> startExportTask(@RequestBody ExportTaskRequest request) {
-//        String taskId = UUID.randomUUID().toString();
-//        ExportTask task;
-//
-//        if (request.getTableName() != null) {
-//            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableName());
-//        } else if (request.getTableNames() != null && !request.getTableNames().isEmpty()) {
-//            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableNames());
-//        } else {
-//            return ResponseEntity.badRequest().body("No valid table name(s) provided.");
-//        }
-//
-//        taskManager.addTask(task);
-//        return ResponseEntity.ok(taskId);
-//    }
-
+    // Mapping do rozpoczęcia zadania eksportu
     @PostMapping("/export")
-    public ResponseEntity<String> startExportTask(@RequestBody List<String> tableNames) {
+    public ResponseEntity<String> startExportTask(@RequestBody ExportTaskRequest request) {
         String taskId = UUID.randomUUID().toString();
-        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", tableNames);
+        ExportTask task;
+
+        if (request.getTableName() != null) {
+            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableName());
+        } else if (request.getTableNames() != null && !request.getTableNames().isEmpty()) {
+            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableNames());
+        } else {
+            return ResponseEntity.badRequest().body("No valid table name(s) provided.");
+        }
+
         taskManager.addTask(task);
         return ResponseEntity.ok(taskId);
     }
+
+//    @PostMapping("/export")
+//    public ResponseEntity<String> startExportTask(@RequestBody Map<String, List<String>> tableColumns) {
+//        String taskId = UUID.randomUUID().toString();
+//        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", new ArrayList<>(tableColumns.keySet()));
+//        taskManager.addTask(task);
+//        return ResponseEntity.ok(taskId);
+//    }
 
 
     // Mapping do sprawdzania statusu zadania na podstawie ID
@@ -98,6 +98,25 @@ public class FileControler {
     }
 
     // Mapping do pobierania pliku Excel na podstawie ID zadania
+    @GetMapping("/excel/{taskId}")
+    public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
+        ExportTask exportTask = taskManager.getTask(taskId);
+        if (exportTask == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Task not found");
+            return;
+        }
+
+        Map<String, List<String>> tableColumns = exportTask.getTableColumns();
+        if (tableColumns == null || tableColumns.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No tables or columns selected");
+            return;
+        }
+
+        taskManager.exportToExcel(tableColumns, response, taskId);
+    }
+
+
+    //bardzo dziwna sytuacja ze musze pisac komentarz w kodzie lololol
 //    @GetMapping("/excel/{taskId}")
 //    public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
 //        ExportTask exportTask = taskManager.getTask(taskId);
@@ -108,34 +127,17 @@ public class FileControler {
 //
 //        List<String> tableNames = exportTask.getTableNames();
 //        if (tableNames == null || tableNames.isEmpty()) {
-//            String tableName = exportTask.getTableName();
-//            if (tableName == null) {
-//                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Table name is null");
-//                return;
-//            }
-//            tableNames = Collections.singletonList(tableName);
+//            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Table names are missing");
+//            return;
 //        }
 //
-//        // Wywołaj metodę exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
-//        taskManager.exportToExcel(tableNames, response, taskId);
+//        Map<String, List<String>> tableColumns = new HashMap<>();
+//        for (String tableName : tableNames) {
+//            List<String> columns = taskManager.getColumnsForTable(tableName);
+//            tableColumns.put(tableName, columns);
+//        }
+//
+//        taskManager.exportToExcel(tableColumns, response, taskId);
 //    }
 
-
-    //bardzo dziwna sytuacja ze musze pisac komentarz w kodzie lololol
-    @GetMapping("/excel/{taskId}")
-    public void exportExcelByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
-        ExportTask exportTask = taskManager.getTask(taskId);
-        if (exportTask == null) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Task not found");
-            return;
-        }
-
-        List<String> tableNames = exportTask.getTableNames();
-        if (tableNames == null || tableNames.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Table names are missing");
-            return;
-        }
-
-        taskManager.exportToExcel(tableNames, response, taskId);
-    }
 }

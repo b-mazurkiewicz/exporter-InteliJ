@@ -1,0 +1,4 @@
+public List<String> getColumnsForTable(String tableName) {
+        String query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?";
+        return jdbcTemplate.queryForList(query, new Object[]{tableName}, String.class);
+    }

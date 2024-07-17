@@ -1,0 +1,8 @@
+// Mapping do rozpoczęcia zadania eksportu na podstawie nazwy tabeli/widoku
+    @GetMapping("/export/{tableName}")
+    public ResponseEntity<String> startExportTask(@PathVariable String tableName) {
+        String taskId = UUID.randomUUID().toString();
+        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", Collections.singletonList(tableName));
+        taskManager.addTask(task);
+        return ResponseEntity.ok(taskId);
+    }

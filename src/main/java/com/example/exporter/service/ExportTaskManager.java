@@ -1,6 +1,7 @@
 package com.example.exporter.service;
 
 import com.example.exporter.model.ExportTask;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jakarta.servlet.ServletContext;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ExportTaskManager {
@@ -197,5 +199,41 @@ public class ExportTaskManager {
         } else {
             cell.setCellValue("");
         }
+    }
+
+    // Metoda do odczytu nazw tabel i kolumn z przesłanego pliku Excel
+    public List<List<String>> readTableAndColumnNames(MultipartFile file) throws IOException {
+        List<List<String>> allTableColumnNames = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            int numberOfSheets = workbook.getNumberOfSheets();
+            for (int i = 0; i < numberOfSheets; i++) {
+                Sheet sheet = workbook.getSheetAt(i);
+                List<String> tableColumnNames = readTableColumnNamesFromSheet(sheet);
+                allTableColumnNames.add(tableColumnNames);
+            }
+        } catch (InvalidFormatException e) {
+            throw new IOException("Invalid format of Excel file", e);
+        } catch (IOException e) {
+            throw new IOException("Failed to read Excel file", e);
+        }
+        return allTableColumnNames;
+    }
+
+    // Metoda do odczytu nazw tabel i kolumn z pojedynczego arkusza
+    private List<String> readTableColumnNamesFromSheet(Sheet sheet) {
+        List<String> tableColumnNames = new ArrayList<>();
+        if (sheet != null) {
+            Row row = sheet.getRow(1); // Drugi wiersz
+            if (row != null) {
+                int lastCellNum = row.getLastCellNum();
+                for (int i = 0; i < lastCellNum; i++) {
+                    Cell cell = row.getCell(i);
+                    if (cell != null) {
+                        tableColumnNames.add(cell.getStringCellValue().trim());
+                    }
+                }
+            }
+        }
+        return tableColumnNames;
     }
 }

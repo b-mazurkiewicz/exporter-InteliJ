@@ -1,9 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const tableList = document.getElementById('tableList');
+    const exportTablesBtn = document.getElementById('exportTables');
+    const exportSchemasBtn = document.getElementById('exportSchemas');
+    const statusDiv = document.getElementById('status');
+
+    // Fetch and display tables
     fetch('/api/tables')
         .then(response => response.json())
         .then(data => {
-            const tableList = document.getElementById('tableList');
-            tableList.innerHTML = ''; // Wyczyść listę przed dodaniem nowych elementów
+            tableList.innerHTML = ''; // Clear previous list items
             data.forEach(table => {
                 const li = document.createElement('li');
                 const checkbox = document.createElement('input');
@@ -23,7 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => console.error('Error fetching tables:', error));
 
-    document.getElementById('exportTables').addEventListener('click', function() {
+    // Export selected tables
+    exportTablesBtn.addEventListener('click', function() {
         const selectedTables = [];
         document.querySelectorAll('input[name="tables"]:checked').forEach(checkbox => {
             selectedTables.push(checkbox.value);
@@ -39,26 +45,73 @@ document.addEventListener('DOMContentLoaded', function() {
             })
                 .then(response => response.text())
                 .then(taskId => {
-                    console.log('Eksport rozpoczęty. ID zadania:', taskId);
-                    alert('Eksport rozpoczęty. ID zadania: ' + taskId);
+                    console.log('Export started. Task ID:', taskId);
+                    alert('Export started. Task ID: ' + taskId);
 
-                    // Pobierz plik po rozpoczęciu eksportu
-                    fetch(`/api/excel/${taskId}`)
-                        .then(response => response.blob())
-                        .then(blob => {
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `export-${taskId}.xlsx`;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                        })
-                        .catch(error => console.error('Error downloading Excel file:', error));
+                    // Download the Excel file once export starts
+                    downloadExcelFile(taskId);
                 })
-                .catch(error => console.error('Error exporting tables:', error));
+                .catch(error => {
+                    console.error('Error exporting tables:', error);
+                    displayStatus('Error exporting tables', 'error');
+                });
         } else {
-            alert('Proszę zaznaczyć co najmniej jedną tabelę do eksportu.');
+            alert('Please select at least one table to export.');
         }
     });
+
+    // Export database schemas
+    exportSchemasBtn.addEventListener('click', function() {
+        const schemaFile = document.getElementById('schemaFile').files[0];
+        if (!schemaFile) {
+            alert('Please select an Excel file to upload.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', schemaFile);
+
+        fetch('/api/upload-schema', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Schema upload successful:', data);
+                alert('Schema upload successful. Columns: ' + JSON.stringify(data));
+
+                // Download the Excel file after processing and save to user's computer
+                downloadExcelFile(data.taskId); // Use data.taskId
+            })
+            .catch(error => {
+                console.error('Error uploading schema:', error);
+                displayStatus('Error uploading schema', 'error');
+            });
+    });
+
+    // Function to download Excel file after exporting tables
+    function downloadExcelFile(taskId) {
+        fetch(`/api/excel/${taskId}`)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `export-${taskId}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            })
+            .catch(error => {
+                console.error('Error downloading Excel file:', error);
+                displayStatus('Error downloading Excel file', 'error');
+            });
+    }
+
+    // Function to display status messages
+    function displayStatus(message, type) {
+        statusDiv.textContent = message;
+        statusDiv.className = type;
+        statusDiv.style.display = 'block';
+    }
 });

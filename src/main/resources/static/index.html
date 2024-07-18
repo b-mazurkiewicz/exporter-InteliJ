@@ -3,21 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Export Tables</title>
+    <title>Export Tables and Schemas</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="container">
-    <h1>Export Tables</h1>
+    <h1>Export Tables and Schemas</h1>
+    <h2>Select Tables to Export</h2>
     <ul id="tableList">
-        <!-- Example list item with checkbox -->
-        <li>
-            <input type="checkbox" id="table1">
-            <label for="table1">Table 1</label>
-        </li>
-        <!-- Add more list items as needed -->
+        <!-- Dynamic list items will be added here -->
     </ul>
     <button id="exportTables">Export Selected Tables</button>
+
+    <!-- New section for Export Schemas -->
+    <h2>Export Database Schemas</h2>
+    <input type="file" id="schemaFile" accept=".xlsx,.xls">
+    <button id="exportSchemas">Export Database Schemas</button>
+
+    <div id="status"></div>
 </div>
 <script src="script.js"></script>
 </body>

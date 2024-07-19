@@ -1,28 +1,17 @@
 package com.example.exporter.controller;
 
-import com.example.exporter.model.*;
+import com.example.exporter.model.ExportTask;
 import com.example.exporter.service.ExportTaskManager;
-import com.example.exporter.service.UserService;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api")
 public class FileControler {
@@ -42,32 +31,6 @@ public class FileControler {
     }
 
     // Mapping do rozpoczęcia zadania eksportu na podstawie nazwy tabeli/widoku
-    @GetMapping("/export/{tableName}")
-    public ResponseEntity<String> startExportTask(@PathVariable String tableName) {
-        String taskId = UUID.randomUUID().toString();
-        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", Collections.singletonList(tableName));
-        taskManager.addTask(task);
-        return ResponseEntity.ok(taskId);
-    }
-
-//    // Mapping do rozpoczęcia zadania eksportu
-//    @PostMapping("/export")
-//    public ResponseEntity<String> startExportTask(@RequestBody ExportTaskRequest request) {
-//        String taskId = UUID.randomUUID().toString();
-//        ExportTask task;
-//
-//        if (request.getTableName() != null) {
-//            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableName());
-//        } else if (request.getTableNames() != null && !request.getTableNames().isEmpty()) {
-//            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableNames());
-//        } else {
-//            return ResponseEntity.badRequest().body("No valid table name(s) provided.");
-//        }
-//
-//        taskManager.addTask(task);
-//        return ResponseEntity.ok(taskId);
-//    }
-
     @PostMapping("/export")
     public ResponseEntity<String> startExportTask(@RequestBody List<String> tableNames) {
         String taskId = UUID.randomUUID().toString();
@@ -75,7 +38,6 @@ public class FileControler {
         taskManager.addTask(task);
         return ResponseEntity.ok(taskId);
     }
-
 
     // Mapping do sprawdzania statusu zadania na podstawie ID
     @GetMapping("/status/{taskId}")
@@ -110,14 +72,5 @@ public class FileControler {
 
         // Wywołaj metodę exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
         taskManager.exportToExcel(tableNames, response, taskId);
-    }
-    @PostMapping("/upload-schema")
-    public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
-        try {
-            List<List<String>> allTableColumnNames = taskManager.readTableAndColumnNames(file);
-            return ResponseEntity.ok(allTableColumnNames);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process Excel file: " + e.getMessage());
-        }
     }
 }

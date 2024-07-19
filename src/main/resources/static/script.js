@@ -71,16 +71,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('file', schemaFile);
 
-        fetch('/api/upload-schema', {
+        fetch('/api/schema/upload', {  // Ensure correct endpoint
             method: 'POST',
             body: formData
         })
             .then(response => response.json())
             .then(data => {
                 console.log('Schema upload successful:', data);
-                alert('Schema upload successful. Columns: ' + JSON.stringify(data));
+                alert('Schema upload successful. Task ID: ' + data.taskId);
 
-                // Download the Excel file after processing and save to user's computer
+                // Optionally, start exporting schema directly after upload
                 downloadExcelFile(data.taskId); // Use data.taskId
             })
             .catch(error => {

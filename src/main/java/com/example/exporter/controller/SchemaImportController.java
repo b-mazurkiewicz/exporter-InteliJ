@@ -2,6 +2,7 @@ package com.example.exporter.controller;
 
 import com.example.exporter.model.ExportTask;
 import com.example.exporter.model.TableColumnMapTask;
+import com.example.exporter.service.DataService;
 import com.example.exporter.service.SchemaImportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,14 +23,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SchemaImportController {
 
     private final SchemaImportService schemaImportService;
+    private final DataService dataService;
     private final Map<String, TableColumnMapTask> taskMap = new ConcurrentHashMap<>();
 
     @Autowired
-    public SchemaImportController(SchemaImportService schemaImportService) {
+    public SchemaImportController(SchemaImportService schemaImportService, DataService dataService) {
         this.schemaImportService = schemaImportService;
+        this.dataService = dataService;
     }
 
-    // Endpoint do przesyłania pliku z schematem
     @PostMapping("/upload")
     public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
         try {
@@ -47,7 +49,6 @@ public class SchemaImportController {
         }
     }
 
-    // Endpoint do eksportowania wypełnionego schematu na podstawie ID zadania
     @GetMapping("/export/{taskId}")
     public void exportFilledSchemaByTaskId(@PathVariable String taskId, HttpServletResponse response) throws IOException {
         TableColumnMapTask task = taskMap.get(taskId);
@@ -56,6 +57,10 @@ public class SchemaImportController {
             return;
         }
 
-        schemaImportService.exportFilledSchemaToExcel(task.getTableColumnMap(), response, taskId);
+        // Fetch data from the database based on the tableColumnMap
+        Map<String, List<Map<String, Object>>> dataMap = dataService.fetchDataForTables(task.getTableColumnMap());
+
+        // Create and fill the Excel file
+        schemaImportService.createAndFillExcelFile(task.getTableColumnMap(), dataMap, response);
     }
 }

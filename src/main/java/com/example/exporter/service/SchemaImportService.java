@@ -159,4 +159,44 @@ public class SchemaImportService {
             cell.setCellValue(value != null ? value.toString() : "");
         }
     }
+
+
+
+    public void createAndFillExcelFile(Map<String, List<String>> tableColumnMap, Map<String, List<Map<String, Object>>> dataMap, HttpServletResponse response) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            for (Map.Entry<String, List<String>> entry : tableColumnMap.entrySet()) {
+                String tableName = entry.getKey();
+                List<String> columns = entry.getValue();
+                List<Map<String, Object>> rows = dataMap.get(tableName);
+
+                // Create a sheet for the table
+                Sheet sheet = workbook.createSheet(tableName);
+
+                // Create header row
+                Row headerRow = sheet.createRow(0);
+                for (int i = 0; i < columns.size(); i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(columns.get(i));
+                }
+
+                // Create data rows
+                int rowNum = 1;
+                for (Map<String, Object> rowData : rows) {
+                    Row row = sheet.createRow(rowNum++);
+                    for (int colNum = 0; colNum < columns.size(); colNum++) {
+                        Cell cell = row.createCell(colNum);
+                        Object value = rowData.get(columns.get(colNum));
+                        if (value != null) {
+                            cell.setCellValue(value.toString());
+                        }
+                    }
+                }
+            }
+
+            // Write the workbook to the HTTP response
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=\"export.xlsx\"");
+            workbook.write(response.getOutputStream());
+        }
+    }
 }

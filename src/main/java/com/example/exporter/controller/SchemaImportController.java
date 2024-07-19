@@ -57,10 +57,10 @@ public class SchemaImportController {
             return;
         }
 
-        // Fetch data from the database based on the tableColumnMap
+        // Pobierz dane z bazy danych na podstawie tableColumnMap
         Map<String, List<Map<String, Object>>> dataMap = dataService.fetchDataForTables(task.getTableColumnMap());
 
-        // Create and fill the Excel file
+        // Stwórz i uzupełnij plik excel
         schemaImportService.createAndFillExcelFile(task.getTableColumnMap(), dataMap, response);
     }
 }

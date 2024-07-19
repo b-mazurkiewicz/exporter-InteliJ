@@ -70,7 +70,7 @@ public class FileControler {
             tableNames = Collections.singletonList(tableName);
         }
 
-        // Wywołaj metodę exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
+        // Wywołanie metody exportToExcel z ExportTaskManager, aby stworzyć plik Excel z odpowiednią liczbą arkuszy
         taskManager.exportToExcel(tableNames, response, taskId);
     }
 }

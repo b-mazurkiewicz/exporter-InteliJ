@@ -8,19 +8,25 @@
 </head>
 <body>
 <div class="container">
-    <h1>Export Tables and Schemas</h1>
-    <h2>Select Tables to Export</h2>
-    <ul id="tableList">
-        <!-- Dynamic list items will be added here -->
-    </ul>
-    <button id="exportTables">Export Selected Tables</button>
+    <h1>Data Export Tool</h1>
 
-    <!-- New section for Export Schemas -->
-    <h2>Export Database Schemas</h2>
-    <input type="file" id="schemaFile" accept=".xlsx,.xls">
-    <button id="exportSchemas">Export Database Schemas</button>
+    <div class="sections">
+        <div class="section">
+            <h2>Select Tables to Export</h2>
+            <ul id="tableList">
+                <!-- Dynamic list items will be added here -->
+            </ul>
+            <button id="exportTables">Export Selected Tables</button>
+        </div>
 
-    <div id="status"></div>
+        <div class="section">
+            <h2>Export Database Schemas</h2>
+            <input type="file" id="schemaFile" accept=".xlsx,.xls">
+            <button id="exportSchemas">Upload and Export Schemas</button>
+        </div>
+    </div>
+
+    <div id="status" class="status"></div>
 </div>
 <script src="script.js"></script>
 </body>

@@ -6,7 +6,6 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 
-// Klasa reprezentująca zadanie eksportu
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -26,7 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 tableList.appendChild(li);
             });
         })
-        .catch(error => console.error('Error fetching tables:', error));
+        .catch(error => {
+            console.error('Error fetching tables:', error);
+            displayStatus('Error fetching tables', 'error');
+        });
 
     // Export selected tables
     exportTablesBtn.addEventListener('click', function() {
@@ -91,13 +94,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to download Excel file after exporting tables
     function downloadExcelFile(taskId) {
-        fetch(`/api/schema/export/${taskId}`) // Updated endpoint
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.blob();
-            })
+        fetch(`/api/excel/${taskId}`)
+            .then(response => response.blob())
             .then(blob => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -112,5 +110,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error downloading Excel file:', error);
                 displayStatus('Error downloading Excel file', 'error');
             });
+    }
+
+    // Function to display status messages
+    function displayStatus(message, type) {
+        statusDiv.textContent = message;
+        statusDiv.className = 'status ' + type;
+        statusDiv.style.display = 'block';
     }
 });

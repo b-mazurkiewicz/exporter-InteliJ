@@ -4,6 +4,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportSchemasBtn = document.getElementById('exportSchemas');
     const statusDiv = document.getElementById('status');
 
+    // Function to display status messages
+    function displayStatus(message, type) {
+        statusDiv.innerHTML = ''; // Clear previous status messages
+        const p = document.createElement('p');
+        p.className = type;
+        p.textContent = message;
+        statusDiv.appendChild(p);
+    }
+
     // Fetch and display tables
     fetch('/api/tables')
         .then(response => response.json())
@@ -26,7 +35,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 tableList.appendChild(li);
             });
         })
-        .catch(error => console.error('Error fetching tables:', error));
+        .catch(error => {
+            console.error('Error fetching tables:', error);
+            displayStatus('Error fetching tables: ' + error.message, 'error');
+        });
 
     // Export selected tables
     exportTablesBtn.addEventListener('click', function() {
@@ -36,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (selectedTables.length > 0) {
+            displayStatus('Starting export of selected tables...', 'info');
             fetch('/api/export', {
                 method: 'POST',
                 headers: {
@@ -43,17 +56,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify(selectedTables)
             })
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
                 .then(taskId => {
                     console.log('Export started. Task ID:', taskId);
-                    alert('Export started. Task ID: ' + taskId);
+                    displayStatus(`Export started. Task ID: ${taskId}`, 'success');
 
                     // Download the Excel file once export starts
                     downloadExcelFile(taskId);
                 })
                 .catch(error => {
                     console.error('Error exporting tables:', error);
-                    displayStatus('Error exporting tables', 'error');
+                    displayStatus('Error exporting tables: ' + error.message, 'error');
                 });
         } else {
             alert('Please select at least one table to export.');
@@ -78,20 +96,21 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 console.log('Schema upload successful:', data);
-                alert('Schema upload successful. Task ID: ' + data.taskId);
+                displayStatus('Schema upload successful. Task ID: ' + data.taskId, 'success');
 
                 // Optionally, start exporting schema directly after upload
                 downloadExcelFile(data.taskId); // Use data.taskId
             })
             .catch(error => {
                 console.error('Error uploading schema:', error);
-                displayStatus('Error uploading schema', 'error');
+                displayStatus('Error uploading schema: ' + error.message, 'error');
             });
     });
 
     // Function to download Excel file after exporting tables
     function downloadExcelFile(taskId) {
-        fetch(`/api/schema/export/${taskId}`) // Updated endpoint
+        displayStatus('Downloading Excel file...', 'info');
+        fetch(`/api/excel/${taskId}`) // Updated endpoint
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -107,10 +126,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url); // Clean up the URL object
+                displayStatus('File download initiated', 'success');
             })
             .catch(error => {
                 console.error('Error downloading Excel file:', error);
-                displayStatus('Error downloading Excel file', 'error');
+                displayStatus('Error downloading Excel file: ' + error.message, 'error');
             });
     }
 });

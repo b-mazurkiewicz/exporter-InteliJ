@@ -3,15 +3,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportTablesBtn = document.getElementById('exportTables');
     const exportSchemasBtn = document.getElementById('exportSchemas');
     const statusDiv = document.getElementById('status');
-    const customExportBtn = document.getElementById('customExport');
 
     // Function to display status messages
     function displayStatus(message, type) {
         statusDiv.innerHTML = ''; // Clear previous status messages
         const p = document.createElement('p');
-        p.className = type;
+        p.className = type; // Assign class based on message type (success, error, info)
         p.textContent = message;
         statusDiv.appendChild(p);
+    }
+
+    // Check if elements are properly loaded
+    if (!tableList || !exportTablesBtn || !exportSchemasBtn || !statusDiv) {
+        console.error('One or more elements are missing from the DOM');
+        return;
     }
 
     // Fetch and display tables
@@ -66,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(taskId => {
                     console.log('Export started. Task ID:', taskId);
                     displayStatus(`Export started. Task ID: ${taskId}`, 'success');
+                    alert(`Export started. Task ID: ${taskId}`); // Here is the alert
 
                     // Download the Excel file once export starts
                     downloadExcelFile(taskId);
@@ -104,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 console.log('Schema upload successful:', data);
                 displayStatus('Schema upload successful. Task ID: ' + data.taskId, 'success');
+                alert(`Schema upload successful. Task ID: ${data.taskId}`); // Alert message
 
                 // Start exporting schema directly after upload
                 downloadSchemaFile(data.taskId);
@@ -114,20 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 
-    // Custom export button event listener
-    customExportBtn.addEventListener('click', function() {
-        const selectedTables = [];
-        document.querySelectorAll('input[name="tables"]:checked').forEach(checkbox => {
-            selectedTables.push(checkbox.value);
-        });
-
-        if (selectedTables.length > 0) {
-            // Redirect to custom export page with selected tables
-            window.location.href = `/custom-export.html?tables=${selectedTables.join(',')}`;
-        } else {
-            alert('Please select at least one table.');
-        }
-    });
 
     // Function to download Excel file after exporting tables
     function downloadExcelFile(taskId) {

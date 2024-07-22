@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportTablesBtn = document.getElementById('exportTables');
     const exportSchemasBtn = document.getElementById('exportSchemas');
     const statusDiv = document.getElementById('status');
+    const customExportBtn = document.getElementById('customExport');
 
     // Function to display status messages
     function displayStatus(message, type) {
@@ -89,17 +90,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('file', schemaFile);
 
-        fetch('/api/schema/upload', {  // Ensure correct endpoint
+        displayStatus('Uploading schema...', 'info');
+        fetch('/api/schema/upload', {
             method: 'POST',
             body: formData
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 console.log('Schema upload successful:', data);
                 displayStatus('Schema upload successful. Task ID: ' + data.taskId, 'success');
 
-                // Optionally, start exporting schema directly after upload
-                downloadExcelFile(data.taskId); // Use data.taskId
+                // Start exporting schema directly after upload
+                downloadSchemaFile(data.taskId);
             })
             .catch(error => {
                 console.error('Error uploading schema:', error);
@@ -107,10 +114,25 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 
+    // Custom export button event listener
+    customExportBtn.addEventListener('click', function() {
+        const selectedTables = [];
+        document.querySelectorAll('input[name="tables"]:checked').forEach(checkbox => {
+            selectedTables.push(checkbox.value);
+        });
+
+        if (selectedTables.length > 0) {
+            // Redirect to custom export page with selected tables
+            window.location.href = `/custom-export.html?tables=${selectedTables.join(',')}`;
+        } else {
+            alert('Please select at least one table.');
+        }
+    });
+
     // Function to download Excel file after exporting tables
     function downloadExcelFile(taskId) {
         displayStatus('Downloading Excel file...', 'info');
-        fetch(`/api/excel/${taskId}`) // Updated endpoint
+        fetch(`/api/excel/${taskId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -131,6 +153,33 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error downloading Excel file:', error);
                 displayStatus('Error downloading Excel file: ' + error.message, 'error');
+            });
+    }
+
+    // Function to download schema file after uploading schema
+    function downloadSchemaFile(taskId) {
+        displayStatus('Downloading schema file...', 'info');
+        fetch(`/api/schema/export/${taskId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `schema-export-${taskId}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url); // Clean up the URL object
+                displayStatus('File download initiated', 'success');
+            })
+            .catch(error => {
+                console.error('Error downloading schema file:', error);
+                displayStatus('Error downloading schema file: ' + error.message, 'error');
             });
     }
 });

@@ -17,9 +17,11 @@ import java.util.Map;
 @Service
 public class SchemaImportService {
 
+    private final List<List<String>> firstRows = new ArrayList<>();
 
     public Map<String, List<String>> readTableAndColumnNames(MultipartFile file) throws IOException {
         Map<String, List<String>> tableColumnMap = new LinkedHashMap<>();
+        firstRows.clear();
 
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
@@ -33,14 +35,19 @@ public class SchemaImportService {
                     continue; // Przejdź do następnego arkusza
                 }
 
-                // Odczytaj drugi wiersz (indeks 1, bo indeksowanie zaczyna się od 0)
-                Row row = sheet.getRow(1); // Zakładam, że drugi wiersz zawiera interesujące nas dane
+                List<String> firstRow = new ArrayList<>();
+                firstRows.add(firstRow);
 
-                if (row == null) {
+                // Odczytaj pierwszy i drugi wiersz
+                Row headerRow = sheet.getRow(0); // W pierwszym wierszu znajdują się nazwy, które użytkownik chce przepisać
+                Row dataRow = sheet.getRow(1); // W drugim wierszu znajduje się lokalizacja danych w bazie
+
+                if (dataRow == null || headerRow == null) {
                     continue; // Przejdź do następnego arkusza, jeśli wiersz jest pusty
                 }
 
-                for (Cell cell : row) {
+                // dataRow
+                for (Cell cell : dataRow) {
                     if (cell.getCellType() == CellType.STRING) {
                         String cellValue = cell.getStringCellValue();
                         String[] parts = cellValue.split("\\.");
@@ -53,9 +60,16 @@ public class SchemaImportService {
                         }
                     }
                 }
+
+                // headerRow
+                for (Cell cell : headerRow) {
+                    if (cell.getCellType() == CellType.STRING) {
+                        String cellValue = cell.getStringCellValue();
+                        firstRow.add(cellValue);
+                    }
+                }
             }
         }
-
         return tableColumnMap;
     }
 
@@ -63,6 +77,8 @@ public class SchemaImportService {
                                        Map<String, List<Map<String, Object>>> dataMap,
                                        HttpServletResponse response) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            int sheetIndex = 0;
+
             for (Map.Entry<String, List<String>> entry : tableColumnMap.entrySet()) {
                 String tableName = entry.getKey();
                 List<String> columns = entry.getValue();
@@ -71,11 +87,20 @@ public class SchemaImportService {
                 // Utwórz arkusz dla tabeli
                 Sheet sheet = workbook.createSheet(tableName);
 
-                // Utwórz wiersz nagłówka
+                // pobieranie odpowiedniej listy dla pierwszego wiersza dla tego arkusza
+                List<String> firstRow;
+                if (sheetIndex < firstRows.size()) {
+                    firstRow = firstRows.get(sheetIndex);
+                } else {
+                    firstRow = new ArrayList<>(); //jeśli nie znalazł to po prostu tworzy pustą listę żeby nie wyrzuciło błędu
+                }
+                sheetIndex++;
+
+                // Utwórz wiersz nagłówka z wartościami z pierwszego wiersza
                 Row headerRow = sheet.createRow(0);
-                for (int i = 0; i < columns.size(); i++) {
+                for (int i = 0; i < firstRow.size(); i++) {
                     Cell cell = headerRow.createCell(i);
-                    cell.setCellValue(columns.get(i));
+                    cell.setCellValue(firstRow.get(i));
                 }
 
                 // Utwórz wiersze danych
@@ -90,16 +115,16 @@ public class SchemaImportService {
                 }
 
                 // Automatyczne dostosowanie szerokości kolumn z dodatkowym marginesem
-                for (int i = 0; i < columns.size(); i++) {
+                for (int i = 0; i < firstRow.size(); i++) {
                     sheet.autoSizeColumn(i);
                     // Dodaj margines do szerokości kolumny
                     int columnWidth = sheet.getColumnWidth(i);
-                    sheet.setColumnWidth(i, columnWidth + 2000); // Add 2000 units for padding
+                    sheet.setColumnWidth(i, columnWidth + 2000); // Dodaj 2000 jednostek marginesu
                 }
 
                 // Ustaw minimalną wysokość wiersza (opcjonalne)
                 for (int i = 0; i < rowNum; i++) {
-                    sheet.getRow(i).setHeightInPoints(20); // Adjust height to desired size
+                    sheet.getRow(i).setHeightInPoints(20); // Dostosuj wysokość do żądanego rozmiaru
                 }
             }
 
@@ -109,6 +134,7 @@ public class SchemaImportService {
             workbook.write(response.getOutputStream());
         }
     }
+
 
     // Ustaw wartość komórki i styl na podstawie typu danych
     private void setCellValueAndStyle(Cell cell, Object value, XSSFWorkbook workbook) {

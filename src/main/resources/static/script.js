@@ -65,8 +65,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 label.htmlFor = schema.name;
                 label.textContent = schema.name;
 
+                const closeButton = document.createElement('button');
+                closeButton.className = 'close-btn';
+                closeButton.textContent = 'X';
+                closeButton.addEventListener('click', function() {
+                    // Optionally, you can send a request to the server to delete the schema
+                    // fetch(`/api/schema/delete/${schema.fileDownloadUri}`, { method: 'DELETE' })
+                    //     .then(response => {
+                    //         if (!response.ok) {
+                    //             throw new Error('Network response was not ok');
+                    //         }
+                    //         li.remove();
+                    //     })
+                    //     .catch(error => {
+                    //         console.error('Error deleting schema:', error);
+                    //         displayStatus('Error deleting schema: ' + error.message, 'error');
+                    //     });
+
+                    // Just remove from the DOM
+                    li.remove();
+                });
+
                 li.appendChild(checkbox);
                 li.appendChild(label);
+                li.appendChild(closeButton);
                 schemaList.appendChild(li);
             });
         })
@@ -202,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url); // Clean up the URL object
-                displayStatus('File download initiated', 'success');
+                displayStatus('Excel file download initiated', 'success');
             })
             .catch(error => {
                 console.error('Error downloading Excel file:', error);
@@ -210,10 +232,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Function to download schema file after uploading schema
+    // Function to download schema file directly after upload
     function downloadSchemaFile(taskId) {
         displayStatus('Downloading schema file...', 'info');
-        fetch(`/api/schema/export/${taskId}`)
+        fetch(`/api/schema/${taskId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -224,12 +246,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `schema-export-${taskId}.xlsx`;
+                a.download = `schema-${taskId}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url); // Clean up the URL object
-                displayStatus('File download initiated', 'success');
+                displayStatus('Schema file download initiated', 'success');
             })
             .catch(error => {
                 console.error('Error downloading schema file:', error);

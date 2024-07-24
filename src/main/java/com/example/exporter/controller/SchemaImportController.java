@@ -3,6 +3,7 @@ package com.example.exporter.controller;
 import com.example.exporter.model.ExportTask;
 import com.example.exporter.model.TableColumnMapTask;
 import com.example.exporter.service.DataService;
+import com.example.exporter.service.FileStorageService;
 import com.example.exporter.service.SchemaImportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,9 @@ public class SchemaImportController {
     private final Map<String, TableColumnMapTask> taskMap = new ConcurrentHashMap<>();
 
     @Autowired
+    private FileStorageService storageService;
+
+    @Autowired
     public SchemaImportController(SchemaImportService schemaImportService, DataService dataService) {
         this.schemaImportService = schemaImportService;
         this.dataService = dataService;
@@ -34,7 +38,11 @@ public class SchemaImportController {
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
+        //String message = "";
+
         try {
+            storageService.store(file);
+
             Map<String, List<String>> tableColumnMap = schemaImportService.readTableAndColumnNames(file);
             String taskId = UUID.randomUUID().toString();
 
@@ -42,6 +50,7 @@ public class SchemaImportController {
             taskMap.put(taskId, task);
 
             // Zwróć odpowiedź z taskId i mapą tabel oraz kolumn
+            //message = "Uploaded the file successfully: " + file.getOriginalFilename();
             return ResponseEntity.ok(task);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableList = document.getElementById('tableList');
     const exportTablesBtn = document.getElementById('exportTables');
     const exportSchemasBtn = document.getElementById('exportSchemas');
+    const schemaList = document.getElementById('schemaList');
+    const exportSelectedSchemasBtn = document.getElementById('exportSelectedSchemas');
     const statusDiv = document.getElementById('status');
 
     // Function to display status messages
@@ -14,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Check if elements are properly loaded
-    if (!tableList || !exportTablesBtn || !exportSchemasBtn || !statusDiv) {
+    if (!tableList || !exportTablesBtn || !exportSchemasBtn || !schemaList || !exportSelectedSchemasBtn || !statusDiv) {
         console.error('One or more elements are missing from the DOM');
         return;
     }
@@ -44,6 +46,33 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error fetching tables:', error);
             displayStatus('Error fetching tables: ' + error.message, 'error');
+        });
+
+    // Fetch and display schemas
+    fetch('/files')
+        .then(response => response.json())
+        .then(data => {
+            schemaList.innerHTML = ''; // Clear previous list items
+            data.forEach(schema => {
+                const li = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = schema.name;
+                checkbox.name = 'schemas';
+                checkbox.value = schema.fileDownloadUri;
+
+                const label = document.createElement('label');
+                label.htmlFor = schema.name;
+                label.textContent = schema.name;
+
+                li.appendChild(checkbox);
+                li.appendChild(label);
+                schemaList.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching schemas:', error);
+            displayStatus('Error fetching schemas: ' + error.message, 'error');
         });
 
     // Export selected tables
@@ -121,6 +150,38 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 
+    // Export selected schemas
+    exportSelectedSchemasBtn.addEventListener('click', function() {
+        const selectedSchemas = [];
+        document.querySelectorAll('input[name="schemas"]:checked').forEach(checkbox => {
+            selectedSchemas.push(checkbox.value);
+        });
+
+        if (selectedSchemas.length > 0) {
+            displayStatus('Starting export of selected schemas...', 'info');
+            selectedSchemas.forEach(schemaUrl => {
+                fetch(schemaUrl)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = schemaUrl.split('/').pop(); // Extract file name from URL
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url); // Clean up the URL object
+                        displayStatus('File download initiated', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error downloading schema file:', error);
+                        displayStatus('Error downloading schema file: ' + error.message, 'error');
+                    });
+            });
+        } else {
+            alert('Please select at least one schema to export.');
+        }
+    });
 
     // Function to download Excel file after exporting tables
     function downloadExcelFile(taskId) {

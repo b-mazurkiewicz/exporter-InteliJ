@@ -13,7 +13,7 @@
     <div class="sections">
         <div class="section">
             <h2>Select Tables to Export</h2>
-            <ul id="tableList">
+            <ul id="tableList" class="list">
                 <!-- Dynamic list items will be added here -->
             </ul>
             <button id="exportTables">Export Selected Tables</button>
@@ -23,6 +23,11 @@
             <h2>Export Database Schemas</h2>
             <input type="file" id="schemaFile" accept=".xlsx,.xls">
             <button id="exportSchemas">Upload and Export Schemas</button>
+            <h2>Select Schemas to Export</h2>
+            <ul id="schemaList" class="list">
+                <!-- Dynamic list items will be added here -->
+            </ul>
+            <button id="exportSelectedSchemas">Export Selected Schemas</button>
         </div>
     </div>
 

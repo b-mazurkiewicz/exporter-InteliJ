@@ -1,6 +1,7 @@
 package com.example.exporter.service;
 
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +25,10 @@ public class FileStorageService {
     }
 
     public FileDB getFile(String id) {
-        return fileDBRepository.findById(id).get();
+        return fileDBRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("File not found with id " + id));
     }
+
 
     public Stream<FileDB> getAllFiles() {
         return fileDBRepository.findAll().stream();

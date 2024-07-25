@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 checkbox.type = 'checkbox';
                 checkbox.id = schema.name;
                 checkbox.name = 'schemas';
-                checkbox.value = schema.fileDownloadUri;
+                checkbox.value = schema.url; // Assuming schema.url contains the full URL
 
                 const label = document.createElement('label');
                 label.htmlFor = schema.name;
@@ -69,20 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 closeButton.className = 'close-btn';
                 closeButton.textContent = 'X';
                 closeButton.addEventListener('click', function() {
-                    // Optionally, you can send a request to the server to delete the schema
-                    // fetch(`/api/schema/delete/${schema.fileDownloadUri}`, { method: 'DELETE' })
-                    //     .then(response => {
-                    //         if (!response.ok) {
-                    //             throw new Error('Network response was not ok');
-                    //         }
-                    //         li.remove();
-                    //     })
-                    //     .catch(error => {
-                    //         console.error('Error deleting schema:', error);
-                    //         displayStatus('Error deleting schema: ' + error.message, 'error');
-                    //     });
-
-                    // Just remove from the DOM
                     li.remove();
                 });
 
@@ -182,22 +168,32 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedSchemas.length > 0) {
             displayStatus('Starting export of selected schemas...', 'info');
             selectedSchemas.forEach(schemaUrl => {
-                fetch(schemaUrl)
-                    .then(response => response.blob())
+                // Extract file ID from URL (assuming URL contains the ID directly)
+                const fileId = schemaUrl.split('/').pop(); // Extract file ID from URL
+
+                fetch(`/files/${fileId}`, {
+                    method: 'POST'
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.blob(); // Assuming the response is a blob (Excel file)
+                    })
                     .then(blob => {
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = schemaUrl.split('/').pop(); // Extract file name from URL
+                        a.download = `schema-${fileId}.xlsx`;
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
                         window.URL.revokeObjectURL(url); // Clean up the URL object
-                        displayStatus('File download initiated', 'success');
+                        displayStatus('Schema file download initiated', 'success');
                     })
                     .catch(error => {
-                        console.error('Error downloading schema file:', error);
-                        displayStatus('Error downloading schema file: ' + error.message, 'error');
+                        console.error('Error exporting file:', error);
+                        displayStatus('Error exporting file: ' + error.message, 'error');
                     });
             });
         } else {

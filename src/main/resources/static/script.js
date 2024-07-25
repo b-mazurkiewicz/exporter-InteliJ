@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportSchemasBtn = document.getElementById('exportSchemas');
     const schemaList = document.getElementById('schemaList');
     const exportSelectedSchemasBtn = document.getElementById('exportSelectedSchemas');
+    const deleteSelectedSchemasBtn = document.getElementById('deleteSelectedSchemas'); // New delete button
     const statusDiv = document.getElementById('status');
 
     function displayStatus(message, type) {
@@ -24,25 +25,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     const li = document.createElement('li');
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
-                    checkbox.id = schema.name;
+                    checkbox.id = schema.name; // Ensure this is unique
                     checkbox.name = 'schemas';
-                    checkbox.value = schema.url; // Assuming schema.url contains the full URL
+                    checkbox.value = schema.id; // Assuming schema.id contains the ID
 
                     const label = document.createElement('label');
                     label.htmlFor = schema.name;
                     label.textContent = schema.name;
 
-                    const closeButton = document.createElement('button');
-                    closeButton.className = 'close-btn';
-                    closeButton.textContent = 'X';
-                    closeButton.addEventListener('click', function() {
-                        console.log(`Attempting to delete schema with ID: ${schema.id}`); // Log ID
-                        deleteSchema(schema.id, li); // Pass schema id and li element
-                    });
-
                     li.appendChild(checkbox);
                     li.appendChild(label);
-                    li.appendChild(closeButton);
                     schemaList.appendChild(li);
                 });
             })
@@ -159,10 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (selectedSchemas.length > 0) {
             displayStatus('Starting export of selected schemas...', 'info');
-            selectedSchemas.forEach(schemaUrl => {
-                const fileId = schemaUrl.split('/').pop();
-
-                fetch(`/files/${fileId}`, {
+            selectedSchemas.forEach(schemaId => {
+                fetch(`/files/${schemaId}`, {
                     method: 'POST'
                 })
                     .then(response => {
@@ -175,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `schema-${fileId}.xlsx`;
+                        a.download = `schema-${schemaId}.xlsx`;
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
@@ -189,6 +179,39 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } else {
             alert('Please select at least one schema to export.');
+        }
+    });
+
+    deleteSelectedSchemasBtn.addEventListener('click', function() {
+        const selectedSchemas = [];
+        document.querySelectorAll('input[name="schemas"]:checked').forEach(checkbox => {
+            selectedSchemas.push(checkbox.value);
+        });
+
+        if (selectedSchemas.length > 0) {
+            displayStatus('Deleting selected schemas...', 'info');
+            Promise.all(selectedSchemas.map(schemaId =>
+                fetch(`/files/${schemaId}`, { method: 'DELETE' })
+                    .then(response => {
+                        console.log(`Delete response for schema ID ${schemaId}:`, response);
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`Error ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.text();
+                    })
+            ))
+                .then(() => {
+                    displayStatus('Selected schemas deleted successfully', 'success');
+                    fetchSchemas(); // Fetch updated list of schemas
+                })
+                .catch(error => {
+                    console.error('Error deleting schemas:', error);
+                    displayStatus('Error deleting schemas: ' + error.message, 'error');
+                });
+        } else {
+            alert('Please select at least one schema to delete.');
         }
     });
 
@@ -241,31 +264,6 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error downloading schema file:', error);
                 displayStatus('Error downloading schema file: ' + error.message, 'error');
-            });
-    }
-
-    function deleteSchema(schemaId, listItem) {
-        console.log("Attempting to delete schema with ID:", schemaId); // Log ID
-        fetch(`/files/${schemaId}`, {
-            method: 'DELETE'
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`Error ${response.status}: ${text}`);
-                    });
-                }
-                return response.text(); // Read response as text
-            })
-            .then(data => {
-                console.log('Delete response data:', data); // Log response data
-                schemaList.removeChild(listItem);
-                displayStatus('Schema deleted successfully', 'success');
-                fetchSchemas(); // Fetch updated list of schemas
-            })
-            .catch(error => {
-                console.error('Error deleting schema:', error);
-                displayStatus('Error deleting schema: ' + error.message, 'error');
             });
     }
 });

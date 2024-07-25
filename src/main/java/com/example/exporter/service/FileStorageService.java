@@ -33,4 +33,13 @@ public class FileStorageService {
     public Stream<FileDB> getAllFiles() {
         return fileDBRepository.findAll().stream();
     }
+
+    public boolean deleteFile(String fileId) {
+        try {
+            fileDBRepository.deleteById(fileId);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

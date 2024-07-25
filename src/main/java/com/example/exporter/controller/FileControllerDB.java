@@ -40,19 +40,6 @@ public class FileControllerDB {
     private TaskMapService taskMapService;
     private final Map<String, TableColumnMapTask> taskMap = new ConcurrentHashMap<>();
 
-
-   /* @PostMapping("/upload")
-    public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("file") MultipartFile file) {
-        try {
-            storageService.store(file);
-            String message = "Uploaded the file successfully: " + file.getOriginalFilename();
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(message));
-        } catch (Exception e) {
-            String message = "Could not upload the file: " + file.getOriginalFilename() + "!";
-            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new ResponseMessage(message));
-        }
-    }*/
-
    @PostMapping("/upload")
    public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
        //String message = "";
@@ -94,14 +81,6 @@ public class FileControllerDB {
         return ResponseEntity.status(HttpStatus.OK).body(files);
     }
 
-    /*@GetMapping("/files/{id}")
-   public ResponseEntity<byte[]> getFile(@PathVariable String id) {
-       FileDB fileDB = storageService.getFile(id);
-
-       return ResponseEntity.ok()
-               .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDB.getName() + "\"")
-               .body(fileDB.getData());
-   }*/
 
     @PostMapping("/files/{id}")
     public void processFile(@PathVariable String id, HttpServletResponse response) {
@@ -145,6 +124,24 @@ public class FileControllerDB {
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
+        }
+    }
+
+    @DeleteMapping("/files/{id}")
+    public ResponseEntity<?> deleteSchema(@PathVariable String id) {
+        try {
+            System.out.println("Attempting to delete schema with ID: " + id);
+            boolean deleted = storageService.deleteFile(id);
+            if (deleted) {
+                System.out.println("Schema successfully deleted with ID: " + id);
+                return ResponseEntity.ok("Schema deleted successfully");
+            } else {
+                System.out.println("Schema not found with ID: " + id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Schema not found");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to delete schema with ID: " + id);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete schema: " + e.getMessage());
         }
     }
 

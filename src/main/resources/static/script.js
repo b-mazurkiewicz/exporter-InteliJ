@@ -20,22 +20,24 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 schemaList.innerHTML = ''; // Clear previous list items
                 data.forEach(schema => {
+                    console.log(`Fetched schema:`, schema); // Log schema data for debugging
                     const li = document.createElement('li');
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
-                    checkbox.id = schema.id; // Use schema.id as checkbox ID
+                    checkbox.id = schema.name;
                     checkbox.name = 'schemas';
-                    checkbox.value = schema.id; // Use schema.id as checkbox value
+                    checkbox.value = schema.url; // Assuming schema.url contains the full URL
 
                     const label = document.createElement('label');
-                    label.htmlFor = schema.id;
+                    label.htmlFor = schema.name;
                     label.textContent = schema.name;
 
                     const closeButton = document.createElement('button');
                     closeButton.className = 'close-btn';
                     closeButton.textContent = 'X';
                     closeButton.addEventListener('click', function() {
-                        deleteSchema(schema.id, li); // Pass schema ID and li element
+                        console.log(`Attempting to delete schema with ID: ${schema.id}`); // Log ID
+                        deleteSchema(schema.id, li); // Pass schema id and li element
                     });
 
                     li.appendChild(checkbox);
@@ -50,35 +52,32 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    function fetchTables() {
-        fetch('/api/tables')
-            .then(response => response.json())
-            .then(data => {
-                tableList.innerHTML = ''; // Clear previous list items
-                data.forEach(table => {
-                    const li = document.createElement('li');
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.id = table;
-                    checkbox.name = 'tables';
-                    checkbox.value = table;
+    fetch('/api/tables')
+        .then(response => response.json())
+        .then(data => {
+            tableList.innerHTML = ''; // Clear previous list items
+            data.forEach(table => {
+                const li = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = table;
+                checkbox.name = 'tables';
+                checkbox.value = table;
 
-                    const label = document.createElement('label');
-                    label.htmlFor = table;
-                    label.textContent = table;
+                const label = document.createElement('label');
+                label.htmlFor = table;
+                label.textContent = table;
 
-                    li.appendChild(checkbox);
-                    li.appendChild(label);
-                    tableList.appendChild(li);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching tables:', error);
-                displayStatus('Error fetching tables: ' + error.message, 'error');
+                li.appendChild(checkbox);
+                li.appendChild(label);
+                tableList.appendChild(li);
             });
-    }
+        })
+        .catch(error => {
+            console.error('Error fetching tables:', error);
+            displayStatus('Error fetching tables: ' + error.message, 'error');
+        });
 
-    fetchTables(); // Fetch tables initially
     fetchSchemas(); // Fetch schemas initially
 
     exportTablesBtn.addEventListener('click', function() {
@@ -105,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(taskId => {
                     console.log('Export started. Task ID:', taskId);
                     displayStatus(`Export started. Task ID: ${taskId}`, 'success');
-                    alert(`Export started. Task ID: ${taskId}`); // Alert message
+                    alert(`Export started. Task ID: ${taskId}`); // Here is the alert
 
                     downloadExcelFile(taskId);
                 })
@@ -160,8 +159,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (selectedSchemas.length > 0) {
             displayStatus('Starting export of selected schemas...', 'info');
-            selectedSchemas.forEach(schemaId => {
-                fetch(`/files/${schemaId}`, {
+            selectedSchemas.forEach(schemaUrl => {
+                const fileId = schemaUrl.split('/').pop();
+
+                fetch(`/files/${fileId}`, {
                     method: 'POST'
                 })
                     .then(response => {
@@ -174,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `schema-${schemaId}.xlsx`;
+                        a.download = `schema-${fileId}.xlsx`;
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
@@ -245,25 +246,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function deleteSchema(schemaId, listItem) {
         console.log("Attempting to delete schema with ID:", schemaId); // Log ID
-
-        // Check if schemaId is valid
-        if (!schemaId || schemaId === 'undefined') {
-            console.error('Invalid schema ID');
-            displayStatus('Invalid schema ID', 'error');
-            return;
-        }
-
-        // Perform the delete operation
         fetch(`/files/${schemaId}`, {
             method: 'DELETE'
         })
-            .then(response => response.text().then(text => {
-                console.log('Response text:', text); // Log response text
+            .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${text}`);
+                    return response.text().then(text => {
+                        throw new Error(`Error ${response.status}: ${text}`);
+                    });
                 }
-                return text;
-            }))
+                return response.text(); // Read response as text
+            })
             .then(data => {
                 console.log('Delete response data:', data); // Log response data
                 schemaList.removeChild(listItem);

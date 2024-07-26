@@ -40,27 +40,23 @@ public class FileControllerDB {
     private TaskMapService taskMapService;
     private final Map<String, TableColumnMapTask> taskMap = new ConcurrentHashMap<>();
 
-   @PostMapping("/upload")
-   public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
-       //String message = "";
+    @PostMapping("/upload")
+    public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
+        try {
+            storageService.store(file);
 
-       try {
-           storageService.store(file);
+            Map<String, List<String>> tableColumnMap = schemaImportService.readTableAndColumnNames(file);
+            String taskId = UUID.randomUUID().toString();
 
-           Map<String, List<String>> tableColumnMap = schemaImportService.readTableAndColumnNames(file);
-           String taskId = UUID.randomUUID().toString();
+            TableColumnMapTask task = new TableColumnMapTask(taskId, "IN_PROGRESS", tableColumnMap);
+            taskMap.put(taskId, task);
 
-           TableColumnMapTask task = new TableColumnMapTask(taskId, "IN_PROGRESS", tableColumnMap);
-           taskMap.put(taskId, task);
-
-           // Zwróć odpowiedź z taskId i mapą tabel oraz kolumn
-           //message = "Uploaded the file successfully: " + file.getOriginalFilename();
-           return ResponseEntity.ok(task);
-       } catch (IOException e) {
-           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                   .body("Failed to process Excel file: " + e.getMessage());
-       }
-   }
+            return ResponseEntity.ok(task);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to process Excel file: " + e.getMessage());
+        }
+    }
 
     @GetMapping("/files")
     public ResponseEntity<List<ResponseFile>> getListFiles() {
@@ -80,7 +76,6 @@ public class FileControllerDB {
 
         return ResponseEntity.status(HttpStatus.OK).body(files);
     }
-
 
     @PostMapping("/files/{id}")
     public void processFile(@PathVariable String id, HttpServletResponse response) {
@@ -130,28 +125,17 @@ public class FileControllerDB {
     @DeleteMapping("/files/{id}")
     public ResponseEntity<?> deleteSchema(@PathVariable String id) {
         try {
-            System.out.println("Attempting to delete schema with ID: " + id);
             boolean deleted = storageService.deleteFile(id);
             if (deleted) {
-                System.out.println("Schema successfully deleted with ID: " + id);
                 return ResponseEntity.ok("Schema deleted successfully");
             } else {
-                System.out.println("Schema not found with ID: " + id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Schema not found");
             }
         } catch (Exception e) {
-            System.err.println("Failed to delete schema with ID: " + id);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete schema: " + e.getMessage());
         }
     }
 
-
-
-
-
-
-    //to trzeba będzie przerzucić gdzie indziej pozniej
-    // Klasa wewnętrzna implementująca MultipartFile
     private static class ByteArrayMultipartFile implements MultipartFile {
 
         private final byte[] content;

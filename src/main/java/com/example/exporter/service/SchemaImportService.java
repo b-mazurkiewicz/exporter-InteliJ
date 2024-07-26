@@ -18,10 +18,12 @@ import java.util.Map;
 public class SchemaImportService {
 
     private final List<List<String>> firstRows = new ArrayList<>();
+    private final List<String> sheetNames = new ArrayList<>(); // Lista nazw arkuszy
 
     public Map<String, List<String>> readTableAndColumnNames(MultipartFile file) throws IOException {
         Map<String, List<String>> tableColumnMap = new LinkedHashMap<>();
         firstRows.clear();
+        sheetNames.clear(); // Czyść listę nazw arkuszy przed rozpoczęciem nowego importu
 
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
@@ -29,6 +31,7 @@ public class SchemaImportService {
             // Iteracja przez wszystkie arkusze
             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
                 Sheet sheet = workbook.getSheetAt(i);
+                sheetNames.add(sheet.getSheetName()); // Dodaj nazwę arkusza do listy
 
                 // Sprawdź, czy arkusz ma co najmniej dwa wiersze
                 if (sheet.getPhysicalNumberOfRows() < 2) {
@@ -84,8 +87,9 @@ public class SchemaImportService {
                 List<String> columns = entry.getValue();
                 List<Map<String, Object>> rows = dataMap.get(tableName);
 
-                // Utwórz arkusz dla tabeli
-                Sheet sheet = workbook.createSheet(tableName);
+                // Utwórz arkusz dla tabeli z oryginalną nazwą arkusza
+                String sheetName = sheetNames.get(sheetIndex); // Pobierz oryginalną nazwę arkusza
+                Sheet sheet = workbook.createSheet(sheetName);
 
                 // pobieranie odpowiedniej listy dla pierwszego wiersza dla tego arkusza
                 List<String> firstRow;

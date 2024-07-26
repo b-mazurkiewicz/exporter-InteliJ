@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(`Schema upload successful. Task ID: ${data.taskId}`);
 
                 // Download schema file
-                downloadSchemaFile(data.taskId, data.originalFileName);
+                downloadSchemaFile(data.taskId);
             })
             .catch(error => {
                 console.error('Error uploading schema:', error);
@@ -162,13 +162,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (!response.ok) {
                             throw new Error('Network response was not ok');
                         }
-                        return response.blob();
+                        return response.blob().then(blob => {
+                            const contentDisposition = response.headers.get('Content-Disposition');
+                            const fileNameMatch = contentDisposition && contentDisposition.match(/filename="([^"]+)"/);
+                            const fileName = fileNameMatch ? fileNameMatch[1] : `schema-${fileId}.xlsx`;
+
+                            return { blob, fileName };
+                        });
                     })
-                    .then(blob => {
+                    .then(({ blob, fileName }) => {
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `schema-${fileId}.xlsx`;
+                        a.download = fileName; // Ustaw nazwę pliku
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
@@ -245,25 +251,32 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    function downloadSchemaFile(taskId, originalFileName) {
-        displayStatus('Downloading schema file...', 'info');
-        fetch(`/files/id/${taskId}`)
+    function downloadSchemaFile(taskId) {
+        const url = `/files/${taskId}`; // URL do pobrania pliku
+        console.log('Downloading from URL:', url); // Log URL
+
+        fetch(url)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                return response.blob();
+                return response.blob().then(blob => {
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    const fileNameMatch = contentDisposition && contentDisposition.match(/filename="([^"]+)"/);
+                    const fileName = fileNameMatch ? fileNameMatch[1] : `schema-${taskId}.xlsx`;
+
+                    return { blob, fileName };
+                });
             })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
+            .then(({ blob, fileName }) => {
                 const a = document.createElement('a');
-                a.href = url;
-                const fileName = originalFileName ? `${originalFileName.replace(/\.[^/.]+$/, "")}-${taskId}.xlsx` : `schema-${taskId}.xlsx`;
-                a.download = fileName;
+                const downloadUrl = window.URL.createObjectURL(blob);
+                a.href = downloadUrl;
+                a.download = fileName; // Ustaw nazwę pliku
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-                window.URL.revokeObjectURL(url);
+                window.URL.revokeObjectURL(downloadUrl);
                 displayStatus('Schema file download initiated', 'success');
             })
             .catch(error => {

@@ -137,6 +137,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Download schema file
                 downloadSchemaFile(data.taskId);
+
+                // Refresh schema list
+                fetchSchemas();
             })
             .catch(error => {
                 console.error('Error uploading schema:', error);
@@ -252,25 +255,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function downloadSchemaFile(taskId) {
-        const url = `/files/${taskId}`; // URL do pobrania pliku
-        console.log('Downloading from URL:', url); // Log URL
-
+        const url = `/files/${taskId}`; // URL to fetch schema file
+        displayStatus('Downloading schema file...', 'info');
         fetch(url)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                return response.blob().then(blob => {
-                    const contentDisposition = response.headers.get('Content-Disposition');
-                    const fileNameMatch = contentDisposition && contentDisposition.match(/filename="([^"]+)"/);
-                    const fileName = fileNameMatch ? fileNameMatch[1] : `schema-${taskId}.xlsx`;
-
-                    return { blob, fileName };
-                });
+                return response.blob();
             })
-            .then(({ blob, fileName }) => {
-                const a = document.createElement('a');
+            .then(blob => {
+                const contentDisposition = response.headers.get('Content-Disposition');
+                const fileNameMatch = contentDisposition && contentDisposition.match(/filename="([^"]+)"/);
+                const fileName = fileNameMatch ? fileNameMatch[1] : `schema-${taskId}.xlsx`;
+
                 const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
                 a.href = downloadUrl;
                 a.download = fileName; // Ustaw nazwę pliku
                 document.body.appendChild(a);

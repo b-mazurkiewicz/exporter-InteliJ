@@ -87,8 +87,10 @@ public class SchemaImportService {
                 List<String> columns = entry.getValue();
                 List<Map<String, Object>> rows = dataMap.get(tableName);
 
-                // Utwórz arkusz dla tabeli z oryginalną nazwą arkusza
-                String sheetName = sheetNames.get(sheetIndex); // Pobierz oryginalną nazwę arkusza
+                // Użyj nazwy arkusza z oryginalnego pliku, zamiast nazwy tabeli
+                String sheetName = sheetNames.get(sheetIndex);
+
+                // Utwórz arkusz dla tabeli
                 Sheet sheet = workbook.createSheet(sheetName);
 
                 // pobieranie odpowiedniej listy dla pierwszego wiersza dla tego arkusza
@@ -133,8 +135,6 @@ public class SchemaImportService {
             }
 
             // Zapisz arkusz do odpowiedzi HTTP
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=\"export.xlsx\"");
             workbook.write(response.getOutputStream());
         }
     }

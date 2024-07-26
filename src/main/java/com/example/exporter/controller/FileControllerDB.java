@@ -44,14 +44,16 @@ public class FileControllerDB {
     public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
         try {
             storageService.store(file);
-
             Map<String, List<String>> tableColumnMap = schemaImportService.readTableAndColumnNames(file);
             String taskId = UUID.randomUUID().toString();
-
             TableColumnMapTask task = new TableColumnMapTask(taskId, "IN_PROGRESS", tableColumnMap);
             taskMap.put(taskId, task);
 
-            return ResponseEntity.ok(task);
+            // Return both taskId and originalFileName
+            return ResponseEntity.ok(Map.of(
+                    "taskId", taskId,
+                    "originalFileName", file.getOriginalFilename()
+            ));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to process Excel file: " + e.getMessage());
@@ -87,23 +89,17 @@ public class FileControllerDB {
                 return;
             }
 
-            // Tworzymy plik MultipartFile z danych pliku
             MultipartFile file = new ByteArrayMultipartFile(fileDB.getName(), fileDB.getType(), fileDB.getData());
-
-            // Utwórz mapę tabel i kolumn
             Map<String, List<String>> tableColumnMap = schemaImportService.readTableAndColumnNames(file);
-
-            // Pobierz dane
             Map<String, List<Map<String, Object>>> dataMap = dataService.fetchDataForTables(tableColumnMap);
 
-            // Ustaw nagłówki odpowiedzi
+            String originalFileName = fileDB.getName();
+            String outputFileName = constructOutputFileName(originalFileName, id);
+
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=schema-" + id + ".xlsx");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + outputFileName + "\"");
 
-            // Utwórz i wypełnij plik Excel
             schemaImportService.createAndFillExcelFile(tableColumnMap, dataMap, response);
-
-            // Ustaw status odpowiedzi na OK
             response.setStatus(HttpServletResponse.SC_OK);
         } catch (NoSuchElementException e) {
             try {
@@ -120,6 +116,13 @@ public class FileControllerDB {
                 ioException.printStackTrace();
             }
         }
+    }
+
+
+    private String constructOutputFileName(String originalFileName, String id) {
+        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        String baseFileName = originalFileName.substring(0, originalFileName.lastIndexOf("."));
+        return baseFileName + "-" + id + fileExtension;
     }
 
     @DeleteMapping("/files/{id}")

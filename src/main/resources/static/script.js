@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const schemaList = document.getElementById('schemaList');
     const exportSelectedSchemasBtn = document.getElementById('exportSelectedSchemas');
     const statusDiv = document.getElementById('status');
-    const deleteSelectedSchemasBtn = document.getElementById('deleteSelectedSchemas'); // Button for deleting schemas
+    const deleteSelectedSchemasBtn = document.getElementById('deleteSelectedSchemas');
 
     function displayStatus(message, type) {
         statusDiv.innerHTML = ''; // Clear previous status messages
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(taskId => {
                     console.log('Export started. Task ID:', taskId);
                     displayStatus(`Export started. Task ID: ${taskId}`, 'success');
-                    alert(`Export started. Task ID: ${taskId}`); // Here is the alert
+                    alert(`Export started. Task ID: ${taskId}`);
 
                     downloadExcelFile(taskId);
                 })
@@ -133,9 +133,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 console.log('Schema upload successful:', data);
                 displayStatus('Schema upload successful. Task ID: ' + data.taskId, 'success');
-                alert(`Schema upload successful. Task ID: ${data.taskId}`); // Alert message
+                alert(`Schema upload successful. Task ID: ${data.taskId}`);
 
-                downloadSchemaFile(data.taskId);
+                // Download schema file
+                downloadSchemaFile(data.taskId, data.originalFileName);
             })
             .catch(error => {
                 console.error('Error uploading schema:', error);
@@ -244,9 +245,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    function downloadSchemaFile(taskId) {
+    function downloadSchemaFile(taskId, originalFileName) {
         displayStatus('Downloading schema file...', 'info');
-        fetch(`/api/schema/${taskId}`)
+        fetch(`/files/id/${taskId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -257,7 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `schema-${taskId}.xlsx`;
+                const fileName = originalFileName ? `${originalFileName.replace(/\.[^/.]+$/, "")}-${taskId}.xlsx` : `schema-${taskId}.xlsx`;
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();

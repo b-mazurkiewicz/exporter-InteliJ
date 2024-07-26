@@ -183,6 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         a.remove();
                         window.URL.revokeObjectURL(url);
                         displayStatus('Schema file download initiated', 'success');
+                        alert(`Schema upload successful. File ID: ${fileId}`);
                     })
                     .catch(error => {
                         console.error('Error exporting file:', error);

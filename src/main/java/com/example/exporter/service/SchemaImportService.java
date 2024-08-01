@@ -7,23 +7,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class SchemaImportService {
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private final List<List<String>> firstRows = new ArrayList<>();
     private final List<String> sheetNames = new ArrayList<>(); // Lista nazw arkuszy
+    private final Map<String, List<Integer>> sortingMap = new HashMap<>(); // Mapa do sortowania
+    private final Map<String, List<String>> columnMap = new LinkedHashMap<>(); // Mapa kolumn dla tabel
 
     public Map<String, List<String>> readTableAndColumnNames(MultipartFile file) throws IOException {
         Map<String, List<String>> tableColumnMap = new LinkedHashMap<>();
         firstRows.clear();
         sheetNames.clear(); // Czyść listę nazw arkuszy przed rozpoczęciem nowego importu
+        sortingMap.clear(); // Czyść mapę sortowania przed rozpoczęciem nowego importu
+        columnMap.clear(); // Czyść mapę kolumn przed rozpoczęciem nowego importu
 
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
@@ -33,23 +38,25 @@ public class SchemaImportService {
                 Sheet sheet = workbook.getSheetAt(i);
                 sheetNames.add(sheet.getSheetName()); // Dodaj nazwę arkusza do listy
 
-                // Sprawdź, czy arkusz ma co najmniej dwa wiersze
-                if (sheet.getPhysicalNumberOfRows() < 2) {
+                // Sprawdź, czy arkusz ma co najmniej trzy wiersze
+                if (sheet.getPhysicalNumberOfRows() < 3) {
                     continue; // Przejdź do następnego arkusza
                 }
 
                 List<String> firstRow = new ArrayList<>();
                 firstRows.add(firstRow);
 
-                // Odczytaj pierwszy i drugi wiersz
+                // Odczytaj pierwszy, drugi i trzeci wiersz
                 Row headerRow = sheet.getRow(0); // W pierwszym wierszu znajdują się nazwy, które użytkownik chce przepisać
                 Row dataRow = sheet.getRow(1); // W drugim wierszu znajduje się lokalizacja danych w bazie
+                Row sortingRow = sheet.getRow(2); // W trzecim wierszu znajdują się informacje potrzebne do sortowania danych
 
-                if (dataRow == null || headerRow == null) {
+                if (dataRow == null || headerRow == null || sortingRow == null) {
                     continue; // Przejdź do następnego arkusza, jeśli wiersz jest pusty
                 }
 
                 // dataRow
+                List<String> columns = new ArrayList<>();
                 for (Cell cell : dataRow) {
                     if (cell.getCellType() == CellType.STRING) {
                         String cellValue = cell.getStringCellValue();
@@ -60,9 +67,11 @@ public class SchemaImportService {
                             String columnName = parts[1];
 
                             tableColumnMap.computeIfAbsent(tableName, k -> new ArrayList<>()).add(columnName);
+                            columns.add(columnName); // Dodaj kolumny do mapy
                         }
                     }
                 }
+                columnMap.put(sheet.getSheetName(), columns); // Zapisz kolumny dla arkusza
 
                 // headerRow
                 for (Cell cell : headerRow) {
@@ -71,6 +80,16 @@ public class SchemaImportService {
                         firstRow.add(cellValue);
                     }
                 }
+
+                // sortingRow
+                List<Integer> sortOrder = new ArrayList<>();
+                for (Cell cell : sortingRow) {
+                    if (cell.getCellType() == CellType.NUMERIC) {
+                        int sortOrderValue = (int) cell.getNumericCellValue();
+                        sortOrder.add(sortOrderValue);
+                    }
+                }
+                sortingMap.put(sheet.getSheetName(), sortOrder); // Zapisz informacje o sortowaniu dla danego arkusza
             }
         }
         return tableColumnMap;
@@ -109,6 +128,28 @@ public class SchemaImportService {
                     cell.setCellValue(firstRow.get(i));
                 }
 
+                // Uzyskaj informacje o sortowaniu dla bieżącego arkusza
+                List<Integer> sortOrder = sortingMap.get(sheetName);
+                List<String> columnNames = columnMap.get(sheetName); // Pobierz kolumny dla arkusza
+                if (sortOrder != null && !sortOrder.isEmpty() && columnNames != null) {
+                    // Sortuj wiersze na podstawie informacji o sortowaniu
+                    rows.sort((row1, row2) -> {
+                        for (int sortIndex : sortOrder) {
+                            if (sortIndex < columnNames.size()) {
+                                String columnName = columnNames.get(sortIndex);
+                                Object value1 = row1.get(columnName);
+                                Object value2 = row2.get(columnName);
+
+                                int comparison = compareValues(value1, value2);
+                                if (comparison != 0) {
+                                    return comparison;
+                                }
+                            }
+                        }
+                        return 0;
+                    });
+                }
+
                 // Utwórz wiersze danych
                 int rowNum = 1;
                 for (Map<String, Object> rowData : rows) {
@@ -135,10 +176,11 @@ public class SchemaImportService {
             }
 
             // Zapisz arkusz do odpowiedzi HTTP
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=\"export.xlsx\"");
             workbook.write(response.getOutputStream());
         }
     }
-
 
     // Ustaw wartość komórki i styl na podstawie typu danych
     private void setCellValueAndStyle(Cell cell, Object value, XSSFWorkbook workbook) {
@@ -163,5 +205,49 @@ public class SchemaImportService {
         } else {
             cell.setCellValue("");
         }
+    }
+
+    // Porównaj dwie wartości
+    private int compareValues(Object value1, Object value2) {
+        if (value1 == null && value2 == null) return 0;
+        if (value1 == null) return -1;
+        if (value2 == null) return 1;
+        if (value1 instanceof Comparable && value2 instanceof Comparable) {
+            @SuppressWarnings("unchecked")
+            Comparable<Object> comp1 = (Comparable<Object>) value1;
+            @SuppressWarnings("unchecked")
+            Comparable<Object> comp2 = (Comparable<Object>) value2;
+            return comp1.compareTo(comp2);
+        }
+        return value1.toString().compareTo(value2.toString());
+    }
+
+    // Metoda do pobierania wszystkich tabel i widoków z bazy danych
+    public List<String> getAllTablesAndViews() {
+        String sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'";
+        return jdbcTemplate.queryForList(sql, String.class);
+    }
+
+    // Metoda do pobierania danych z podanej tabeli z uwzględnieniem sortowania
+    public List<Map<String, Object>> getTableData(String tableName, List<Integer> sortOrder) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName);
+
+        if (sortOrder != null && !sortOrder.isEmpty()) {
+            sql.append(" ORDER BY ");
+            List<String> columns = columnMap.get(tableName);
+            if (columns != null) {
+                for (int i = 0; i < sortOrder.size(); i++) {
+                    int columnIndex = sortOrder.get(i);
+                    if (columnIndex < columns.size()) {
+                        sql.append(columns.get(columnIndex)).append(" ASC");
+                        if (i < sortOrder.size() - 1) {
+                            sql.append(", ");
+                        }
+                    }
+                }
+            }
+        }
+
+        return jdbcTemplate.queryForList(sql.toString());
     }
 }

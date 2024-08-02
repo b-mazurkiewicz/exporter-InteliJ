@@ -20,7 +20,7 @@ public class SchemaImportService {
 
     private final List<List<String>> firstRows = new ArrayList<>();
     private final List<String> sheetNames = new ArrayList<>(); // Lista nazw arkuszy
-    private final Map<String, List<Integer>> sortingMap = new HashMap<>(); // Mapa do sortowania
+    private final Map<String, List<SortColumn>> sortingMap = new HashMap<>(); // Mapa do sortowania
     private final Map<String, List<String>> columnMap = new LinkedHashMap<>(); // Mapa kolumn dla tabel
 
     public Map<String, List<String>> readTableAndColumnNames(MultipartFile file) throws IOException {
@@ -82,23 +82,27 @@ public class SchemaImportService {
                 }
 
                 // sortingRow
-                Map<Integer, Integer> sortOrderMap = new TreeMap<>();
+                List<SortColumn> sortColumns = new ArrayList<>();
                 for (int colNum = 0; colNum < sortingRow.getLastCellNum(); colNum++) {
                     Cell cell = sortingRow.getCell(colNum);
-                    if (cell != null && cell.getCellType() == CellType.NUMERIC) {
-                        int sortOrderValue = (int) cell.getNumericCellValue();
-                        sortOrderMap.put(sortOrderValue, colNum);
+                    if (cell != null && cell.getCellType() == CellType.STRING) {
+                        String cellValue = cell.getStringCellValue();
+                        // Parse sorting information, e.g., "1asc" or "2desc"
+                        if (cellValue.matches("\\d+[a-zA-Z]{2,4}")) {
+                            int priority = Integer.parseInt(cellValue.replaceAll("[^0-9]", ""));
+                            String sortDirection = cellValue.replaceAll("\\d+", "");
+                            sortColumns.add(new SortColumn(priority, colNum, sortDirection));
+                        }
                     }
                 }
 
-                // Convert Map to List of column indexes ordered by sort order
-                List<Integer> sortOrder = new ArrayList<>(sortOrderMap.values());
-                sortingMap.put(sheet.getSheetName(), sortOrder); // Zapisz informacje o sortowaniu dla danego arkusza
+                // Sort columns by priority
+                sortColumns.sort(Comparator.comparingInt(SortColumn::getPriority));
+                sortingMap.put(sheet.getSheetName(), sortColumns); // Zapisz informacje o sortowaniu dla danego arkusza
             }
         }
         return tableColumnMap;
     }
-
 
     public void createAndFillExcelFile(Map<String, List<String>> tableColumnMap,
                                        Map<String, List<Map<String, Object>>> dataMap,
@@ -134,12 +138,13 @@ public class SchemaImportService {
                 }
 
                 // Uzyskaj informacje o sortowaniu dla bieżącego arkusza
-                List<Integer> sortOrder = sortingMap.get(sheetName);
+                List<SortColumn> sortColumns = sortingMap.get(sheetName);
                 List<String> columnNames = columnMap.get(sheetName); // Pobierz kolumny dla arkusza
-                if (sortOrder != null && !sortOrder.isEmpty() && columnNames != null) {
+                if (sortColumns != null && !sortColumns.isEmpty() && columnNames != null) {
                     // Sortuj wiersze na podstawie informacji o sortowaniu
                     rows.sort((row1, row2) -> {
-                        for (int colIndex : sortOrder) {
+                        for (SortColumn sortColumn : sortColumns) {
+                            int colIndex = sortColumn.getColumnIndex();
                             if (colIndex < columnNames.size()) {
                                 String columnName = columnNames.get(colIndex);
                                 Object value1 = row1.get(columnName);
@@ -147,7 +152,7 @@ public class SchemaImportService {
 
                                 int comparison = compareValues(value1, value2);
                                 if (comparison != 0) {
-                                    return comparison;
+                                    return sortColumn.getDirection().equalsIgnoreCase("desc") ? -comparison : comparison;
                                 }
                             }
                         }
@@ -227,35 +232,28 @@ public class SchemaImportService {
         return value1.toString().compareTo(value2.toString());
     }
 
-}
+    // Klasa do przechowywania informacji o sortowaniu
+    private static class SortColumn {
+        private final int priority;
+        private final int columnIndex;
+        private final String direction;
 
-
-    /*
-    // Metoda do pobierania wszystkich tabel i widoków z bazy danych
-    public List<String> getAllTablesAndViews() {
-        String sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'";
-        return jdbcTemplate.queryForList(sql, String.class);
-    }
-
-    // Metoda do pobierania danych z podanej tabeli z uwzględnieniem sortowania
-    public List<Map<String, Object>> getTableData(String tableName, List<Integer> sortOrder) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName);
-
-        if (sortOrder != null && !sortOrder.isEmpty()) {
-            sql.append(" ORDER BY ");
-            List<String> columns = columnMap.get(tableName);
-            if (columns != null) {
-                for (int i = 0; i < sortOrder.size(); i++) {
-                    int columnIndex = sortOrder.get(i);
-                    if (columnIndex < columns.size()) {
-                        sql.append(columns.get(columnIndex)).append(" ASC");
-                        if (i < sortOrder.size() - 1) {
-                            sql.append(", ");
-                        }
-                    }
-                }
-            }
+        public SortColumn(int priority, int columnIndex, String direction) {
+            this.priority = priority;
+            this.columnIndex = columnIndex;
+            this.direction = direction;
         }
 
-        return jdbcTemplate.queryForList(sql.toString());
-    }*/
+        public int getPriority() {
+            return priority;
+        }
+
+        public int getColumnIndex() {
+            return columnIndex;
+        }
+
+        public String getDirection() {
+            return direction;
+        }
+    }
+}

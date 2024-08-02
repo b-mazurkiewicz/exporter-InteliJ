@@ -182,7 +182,7 @@ public class SchemaImportService {
 
             // Zapisz arkusz do odpowiedzi HTTP
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=\"export.xlsx\"");
+            //response.setHeader("Content-Disposition", "attachment; filename=\"export.xlsx\"");
             workbook.write(response.getOutputStream());
         }
     }

@@ -38,13 +38,13 @@ public class DataLoader implements CommandLineRunner {
 
         // Dodawanie lub aktualizowanie danych do tabeli Address
         addOrUpdateAddress(new Address(null, "123 Main St", "Anytown", "12345", "USA"));
-        addOrUpdateAddress(new Address(null, "456 Maple St", "Othertown", "67890", "USA"));
+        addOrUpdateAddress(new Address(null, "456 Maple St", "Othertown", "67890", "Poland"));
         addOrUpdateAddress(new Address(null, "789 Elm St", "Sometown", "13579", "USA"));
-        addOrUpdateAddress(new Address(null, "101 Oak St", "Someothertown", "24680", "USA"));
+        addOrUpdateAddress(new Address(null, "101 Oak St", "Someothertown", "24680", "Poland"));
         addOrUpdateAddress(new Address(null, "202 Pine St", "New City", "54321", "USA"));
-        addOrUpdateAddress(new Address(null, "303 Cedar St", "Old Town", "98765", "USA"));
+        addOrUpdateAddress(new Address(null, "303 Cedar St", "Old Town", "98765", "Poland"));
         addOrUpdateAddress(new Address(null, "404 Birch St", "Capitol City", "11223", "USA"));
-        addOrUpdateAddress(new Address(null, "505 Walnut St", "Lakeside", "33445", "USA"));
+        addOrUpdateAddress(new Address(null, "505 Walnut St", "Lakeside", "33445", "Poland"));
 
         // Dodawanie lub aktualizowanie danych do tabeli Company
         addOrUpdateCompany(new Company(null, "Company One", "Big City", "NIP123456789", "USA", new HashSet<>()));

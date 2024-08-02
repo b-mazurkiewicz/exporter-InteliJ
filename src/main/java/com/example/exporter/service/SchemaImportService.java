@@ -82,18 +82,23 @@ public class SchemaImportService {
                 }
 
                 // sortingRow
-                List<Integer> sortOrder = new ArrayList<>();
-                for (Cell cell : sortingRow) {
-                    if (cell.getCellType() == CellType.NUMERIC) {
+                Map<Integer, Integer> sortOrderMap = new TreeMap<>();
+                for (int colNum = 0; colNum < sortingRow.getLastCellNum(); colNum++) {
+                    Cell cell = sortingRow.getCell(colNum);
+                    if (cell != null && cell.getCellType() == CellType.NUMERIC) {
                         int sortOrderValue = (int) cell.getNumericCellValue();
-                        sortOrder.add(sortOrderValue);
+                        sortOrderMap.put(sortOrderValue, colNum);
                     }
                 }
+
+                // Convert Map to List of column indexes ordered by sort order
+                List<Integer> sortOrder = new ArrayList<>(sortOrderMap.values());
                 sortingMap.put(sheet.getSheetName(), sortOrder); // Zapisz informacje o sortowaniu dla danego arkusza
             }
         }
         return tableColumnMap;
     }
+
 
     public void createAndFillExcelFile(Map<String, List<String>> tableColumnMap,
                                        Map<String, List<Map<String, Object>>> dataMap,
@@ -134,9 +139,9 @@ public class SchemaImportService {
                 if (sortOrder != null && !sortOrder.isEmpty() && columnNames != null) {
                     // Sortuj wiersze na podstawie informacji o sortowaniu
                     rows.sort((row1, row2) -> {
-                        for (int sortIndex : sortOrder) {
-                            if (sortIndex < columnNames.size()) {
-                                String columnName = columnNames.get(sortIndex);
+                        for (int colIndex : sortOrder) {
+                            if (colIndex < columnNames.size()) {
+                                String columnName = columnNames.get(colIndex);
                                 Object value1 = row1.get(columnName);
                                 Object value2 = row2.get(columnName);
 
@@ -222,6 +227,10 @@ public class SchemaImportService {
         return value1.toString().compareTo(value2.toString());
     }
 
+}
+
+
+    /*
     // Metoda do pobierania wszystkich tabel i widoków z bazy danych
     public List<String> getAllTablesAndViews() {
         String sql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'";
@@ -249,5 +258,4 @@ public class SchemaImportService {
         }
 
         return jdbcTemplate.queryForList(sql.toString());
-    }
-}
+    }*/

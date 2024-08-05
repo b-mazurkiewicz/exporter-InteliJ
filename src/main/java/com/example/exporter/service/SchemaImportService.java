@@ -193,24 +193,28 @@ public class SchemaImportService {
     }
 
     // Ustaw wartość komórki i styl na podstawie typu danych
-    private void setCellValueAndStyle(Cell cell, Object value, XSSFWorkbook workbook) {
+    public void setCellValueAndStyle(Cell cell, Object value, XSSFWorkbook workbook) {
         if (value != null) {
             CellStyle cellStyle = workbook.createCellStyle();
+            DataFormat dataFormat = workbook.createDataFormat();
+
             if (value instanceof String) {
                 cell.setCellValue((String) value);
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("@"));
+                cellStyle.setDataFormat(dataFormat.getFormat("@"));
             } else if (value instanceof Integer || value instanceof Long) {
                 cell.setCellValue(((Number) value).doubleValue());
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("0"));
+                cellStyle.setDataFormat(dataFormat.getFormat("0"));
             } else if (value instanceof Double) {
                 cell.setCellValue((Double) value);
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+                // Format liczbowy z maksymalnie 12 miejscami po przecinku
+                cellStyle.setDataFormat(dataFormat.getFormat("#,##0.################"));
             } else if (value instanceof java.util.Date) {
                 cell.setCellValue((java.util.Date) value);
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("yyyy-MM-dd"));
+                cellStyle.setDataFormat(dataFormat.getFormat("yyyy-MM-dd")); // Można zmienić format
             } else {
                 cell.setCellValue(value.toString());
             }
+
             cell.setCellStyle(cellStyle);
         } else {
             cell.setCellValue("");

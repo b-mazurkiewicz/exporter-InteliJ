@@ -1810,3 +1810,7 @@ Caused by: org.h2.mvstore.MVStoreException: The file is locked: C:/Users/m.okuni
 	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:81)
 	at org.h2.mvstore.MVStore.<init>(MVStore.java:286)
 	... 28 more
+2024-08-05 11:50:17.018468+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "[*]PROCENT"; oczekiwano "PREPARE"
+Syntax error in SQL statement "[*]PROCENT"; expected "PREPARE"; SQL statement:
+PROCENT [42001-224]

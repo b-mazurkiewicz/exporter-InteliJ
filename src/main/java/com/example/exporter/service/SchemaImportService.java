@@ -10,6 +10,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
@@ -199,20 +201,26 @@ public class SchemaImportService {
             DataFormat dataFormat = workbook.createDataFormat();
 
             if (value instanceof String) {
-                cell.setCellValue((String) value);
-                cellStyle.setDataFormat(dataFormat.getFormat("@"));
+                Date dateValue = parseDate((String) value);
+                if (dateValue != null) {
+                    cell.setCellValue(dateValue);
+                    cellStyle.setDataFormat(dataFormat.getFormat("dd.MM.yyyy")); // Format daty w Excelu
+                } else {
+                    cell.setCellValue((String) value);
+                    cellStyle.setDataFormat(dataFormat.getFormat("@")); // Format tekstowy
+                }
             } else if (value instanceof Integer || value instanceof Long) {
                 cell.setCellValue(((Number) value).doubleValue());
-                cellStyle.setDataFormat(dataFormat.getFormat("0"));
+                cellStyle.setDataFormat(dataFormat.getFormat("0")); // Format liczbowy całkowity
             } else if (value instanceof Double) {
                 cell.setCellValue((Double) value);
-                // Format liczbowy z maksymalnie 12 miejscami po przecinku
-                cellStyle.setDataFormat(dataFormat.getFormat("#,##0.################"));
+                cellStyle.setDataFormat(dataFormat.getFormat("#,##0.################")); // Format liczbowy
             } else if (value instanceof java.util.Date) {
                 cell.setCellValue((java.util.Date) value);
-                cellStyle.setDataFormat(dataFormat.getFormat("yyyy-MM-dd")); // Można zmienić format
+                cellStyle.setDataFormat(dataFormat.getFormat("dd.MM.yyyy")); // Format daty
             } else {
                 cell.setCellValue(value.toString());
+                cellStyle.setDataFormat(dataFormat.getFormat("@")); // Format tekstowy
             }
 
             cell.setCellStyle(cellStyle);
@@ -220,6 +228,25 @@ public class SchemaImportService {
             cell.setCellValue("");
         }
     }
+
+    // Próbuj analizować datę w różnych formatach
+    private Date parseDate(String dateString) {
+        String[] formats = {
+                "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy", "yyyy/MM/dd",
+                "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd/MM/yyyy HH:mm:ss",
+                "dd-MM-yyyy", "dd.MM.yyyy" // Dodaj formaty, które mogą być używane
+        };
+
+        for (String format : formats) {
+            try {
+                return new SimpleDateFormat(format, Locale.ENGLISH).parse(dateString);
+            } catch (ParseException ignored) {
+                // Ignoruj wyjątek, próbuj następnego formatu
+            }
+        }
+        return null;
+    }
+
 
     // Porównaj dwie wartości
     private int compareValues(Object value1, Object value2) {

@@ -30,6 +30,9 @@ public class SchemaImportService {
     // Mapa przechowująca kolumny dla każdej tabeli w bazie danych
     private final Map<String, List<String>> columnMap = new LinkedHashMap<>();
 
+    // Mapa przechowująca wartości filtrów dla każdego arkusza
+    private final Map<String, Map<String, String>> filterMap = new HashMap<>();
+
     // Metoda odczytująca nazwy tabel i kolumn z załadowanego pliku Excel
     public Map<String, List<String>> readTableAndColumnNames(MultipartFile file) throws IOException {
         Map<String, List<String>> tableColumnMap = new LinkedHashMap<>();
@@ -37,6 +40,7 @@ public class SchemaImportService {
         sheetNames.clear(); // Wyczyść listę nazw arkuszy
         sortingMap.clear(); // Wyczyść mapę sortowania
         columnMap.clear(); // Wyczyść mapę kolumn
+        filterMap.clear(); // Wyczyść mapę filtrów
 
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
@@ -46,8 +50,8 @@ public class SchemaImportService {
                 Sheet sheet = workbook.getSheetAt(i);
                 sheetNames.add(sheet.getSheetName()); // Dodaj nazwę arkusza do listy
 
-                // Sprawdź, czy arkusz ma co najmniej trzy wiersze
-                if (sheet.getPhysicalNumberOfRows() < 3) {
+                // Sprawdź, czy arkusz ma co najmniej cztery wiersze
+                if (sheet.getPhysicalNumberOfRows() < 4) {
                     continue; // Przejdź do następnego arkusza
                 }
 
@@ -58,15 +62,18 @@ public class SchemaImportService {
                 Row headerRow = sheet.getRow(0); // W pierwszym wierszu znajdują się nazwy, które użytkownik chce przepisać
                 Row dataRow = sheet.getRow(1); // W drugim wierszu znajduje się lokalizacja danych w bazie
                 Row sortingRow = sheet.getRow(2); // W trzecim wierszu znajdują się informacje potrzebne do sortowania danych
+                Row filterRow = sheet.getRow(3); // W czwartym wierszu znajdują się wartości do filtrowania
 
-                if (dataRow == null || headerRow == null || sortingRow == null) {
+                if (dataRow == null || headerRow == null || sortingRow == null || filterRow == null) {
                     continue; // Przejdź do następnego arkusza, jeśli wiersz jest pusty
                 }
 
                 // Przetwarzanie drugiego wiersza (dataRow) w celu odczytu nazw tabel i kolumn
                 List<String> columns = new ArrayList<>();
-                for (Cell cell : dataRow) {
-                    if (cell.getCellType() == CellType.STRING) {
+                Map<String, String> filters = new HashMap<>();
+                for (int colNum = 0; colNum < dataRow.getLastCellNum(); colNum++) {
+                    Cell cell = dataRow.getCell(colNum);
+                    if (cell != null && cell.getCellType() == CellType.STRING) {
                         String cellValue = cell.getStringCellValue();
                         String[] parts = cellValue.split("\\.");
 
@@ -77,10 +84,20 @@ public class SchemaImportService {
                             // Dodanie kolumny do mapy, jeśli jeszcze nie istnieje
                             tableColumnMap.computeIfAbsent(tableName, k -> new ArrayList<>()).add(columnName);
                             columns.add(columnName); // Dodaj kolumny do mapy
+
+                            // Odczytaj wartość filtra z czwartego wiersza
+                            Cell filterCell = filterRow.getCell(colNum);
+                            if (filterCell != null && filterCell.getCellType() == CellType.STRING) {
+                                String filterValue = filterCell.getStringCellValue();
+                                if (!filterValue.isEmpty()) {
+                                    filters.put(columnName, filterValue); // Dodaj filtr dla kolumny
+                                }
+                            }
                         }
                     }
                 }
                 columnMap.put(sheet.getSheetName(), columns); // Zapisz kolumny dla arkusza
+                filterMap.put(sheet.getSheetName(), filters); // Zapisz filtry dla arkusza
 
                 // Przetwarzanie pierwszego wiersza (headerRow) w celu odczytu nazw kolumn
                 for (Cell cell : headerRow) {
@@ -114,7 +131,6 @@ public class SchemaImportService {
         return tableColumnMap;
     }
 
-    // Metoda tworząca i wypełniająca plik Excel na podstawie danych i kolumn z mapy
     public void createAndFillExcelFile(Map<String, List<String>> tableColumnMap,
                                        Map<String, List<Map<String, Object>>> dataMap,
                                        HttpServletResponse response) throws IOException {
@@ -129,6 +145,13 @@ public class SchemaImportService {
 
                 // Użyj nazwy arkusza z oryginalnego pliku, zamiast nazwy tabeli
                 String sheetName = sheetNames.get(sheetIndex);
+
+                // Pobierz filtry dla arkusza
+                Map<String, String> filters = filterMap.get(sheetName);
+                if (filters != null && !filters.isEmpty()) {
+                    // Zastosuj filtry do wierszy
+                    rows = filterRows(rows, filters);
+                }
 
                 // Utwórz arkusz dla tabeli
                 Sheet sheet = workbook.createSheet(sheetName);
@@ -190,7 +213,7 @@ public class SchemaImportService {
                     // Dodaj margines do szerokości kolumny
                     int columnWidth = sheet.getColumnWidth(i);
                     sheet.setColumnWidth(i, columnWidth + 2000); // Dodanie marginesu do szerokości kolumny
-                     }
+                }
 
                 // Ustaw minimalną wysokość wiersza (opcjonalne)
                 for (int i = 0; i < rowNum; i++) {
@@ -202,6 +225,25 @@ public class SchemaImportService {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             workbook.write(response.getOutputStream());
         }
+    }
+
+    // Metoda do filtrowania wierszy na podstawie wartości w czwartym wierszu
+    private List<Map<String, Object>> filterRows(List<Map<String, Object>> rows, Map<String, String> filters) {
+        List<Map<String, Object>> filteredRows = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            boolean matches = true;
+            for (Map.Entry<String, String> filter : filters.entrySet()) {
+                Object value = row.get(filter.getKey());
+                if (value == null || !value.toString().equalsIgnoreCase(filter.getValue())) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                filteredRows.add(row);
+            }
+        }
+        return filteredRows;
     }
 
     // Metoda ustawiająca wartość komórki i odpowiedni styl na podstawie typu danych

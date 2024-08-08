@@ -37,39 +37,50 @@ public class FileControllerDB {
     private SchemaImportService schemaImportService;
     @Autowired
     private DataService dataService;
-    @Autowired
-    private TaskMapService taskMapService;
+
+    // Mapa do przechowywania zadań mapowania tabel
     private final Map<String, TableColumnMapTask> taskMap = new ConcurrentHashMap<>();
 
+    // Endpoint do uploadu pliku Excel z schematem
     @PostMapping("/upload")
     public ResponseEntity<?> uploadExcelSchema(@RequestParam("file") MultipartFile file) {
         try {
+            // Przechowywanie pliku
             storageService.store(file);
+
+            // Odczytywanie nazw tabel i kolumn z pliku
             Map<String, List<String>> tableColumnMap = schemaImportService.readTableAndColumnNames(file);
+
+            // Generowanie unikalnego ID dla zadania
             String taskId = UUID.randomUUID().toString();
             TableColumnMapTask task = new TableColumnMapTask(taskId, "IN_PROGRESS", tableColumnMap);
             taskMap.put(taskId, task);
 
-            // Return both taskId and originalFileName
+            // Zwrot ID zadania i oryginalnej nazwy pliku
             return ResponseEntity.ok(Map.of(
                     "taskId", taskId,
                     "originalFileName", file.getOriginalFilename()
             ));
         } catch (IOException e) {
+            // Obsługa błędu podczas przetwarzania pliku
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to process Excel file: " + e.getMessage());
         }
     }
 
+    // Endpoint do pobierania listy plików
     @GetMapping("/files")
     public ResponseEntity<List<ResponseFile>> getListFiles() {
+        // Pobieranie wszystkich plików
         List<ResponseFile> files = storageService.getAllFiles().map(dbFile -> {
+            // Tworzenie URI do pobrania pliku
             String fileDownloadUri = ServletUriComponentsBuilder
                     .fromCurrentContextPath()
                     .path("/files/")
                     .path(dbFile.getId())
                     .toUriString();
 
+            // Tworzenie obiektu ResponseFile
             return new ResponseFile(
                     dbFile.getName(),
                     fileDownloadUri,
@@ -77,33 +88,46 @@ public class FileControllerDB {
                     dbFile.getData().length);
         }).collect(Collectors.toList());
 
+        // Zwrot listy plików
         return ResponseEntity.status(HttpStatus.OK).body(files);
     }
 
+    // Endpoint do przetwarzania pliku o określonym ID
     @PostMapping("/files/{id}")
     public void processFile(@PathVariable String id, HttpServletResponse response) {
         try {
+            // Pobieranie pliku z bazy danych
             FileDB fileDB = storageService.getFile(id);
             if (fileDB == null) {
+                // Obsługa przypadku gdy plik nie został znaleziony
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 response.getWriter().write("File not found");
                 return;
             }
 
+            // Tworzenie obiektu MultipartFile z danymi pliku
             MultipartFile file = new ByteArrayMultipartFile(fileDB.getName(), fileDB.getType(), fileDB.getData());
+
+            // Odczytywanie nazw tabel i kolumn z pliku
             Map<String, List<String>> tableColumnMap = schemaImportService.readTableAndColumnNames(file);
+
+            // Pobieranie danych dla tabel
             Map<String, List<Map<String, Object>>> dataMap = dataService.fetchDataForTables(tableColumnMap);
 
+            // Tworzenie nazwy wyjściowego pliku
             String originalFileName = fileDB.getName();
             String outputFileName = constructOutputFileName(originalFileName, id);
 
+            // Ustawianie nagłówków odpowiedzi
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + outputFileName + "\"");
 
+            // Tworzenie i wypełnianie pliku Excel
             schemaImportService.createAndFillExcelFile(tableColumnMap, dataMap, response);
             response.setStatus(HttpServletResponse.SC_OK);
         } catch (NoSuchElementException e) {
             try {
+                // Obsługa wyjątku gdy plik nie został znaleziony
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 response.getWriter().write("File not found: " + e.getMessage());
             } catch (IOException ioException) {
@@ -111,6 +135,7 @@ public class FileControllerDB {
             }
         } catch (IOException e) {
             try {
+                // Obsługa błędu podczas przetwarzania pliku
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().write("Failed to process file: " + e.getMessage());
             } catch (IOException ioException) {
@@ -119,27 +144,37 @@ public class FileControllerDB {
         }
     }
 
-
+    // Metoda do konstruowania nazwy wyjściowego pliku
     private String constructOutputFileName(String originalFileName, String id) {
         String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
         String baseFileName = originalFileName.substring(0, originalFileName.lastIndexOf("."));
         return baseFileName + "-" + id + fileExtension;
     }
 
+    // Endpoint do usuwania pliku o określonym ID
     @DeleteMapping("/files/{id}")
     public ResponseEntity<?> deleteSchema(@PathVariable String id) {
         try {
+            // Usuwanie pliku z bazy danych
             boolean deleted = storageService.deleteFile(id);
             if (deleted) {
+                // Zwrot odpowiedzi gdy usunięcie zakończyło się sukcesem
                 return ResponseEntity.ok("Schema deleted successfully");
             } else {
+                // Zwrot odpowiedzi gdy plik nie został znaleziony
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Schema not found");
             }
         } catch (Exception e) {
+            // Obsługa błędu podczas usuwania pliku
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete schema: " + e.getMessage());
         }
     }
 
+
+
+
+
+    // Klasa wewnętrzna do reprezentacji MultipartFile na podstawie tablicy bajtów, można przenieść gdzieś indziej
     private static class ByteArrayMultipartFile implements MultipartFile {
 
         private final byte[] content;
@@ -189,7 +224,6 @@ public class FileControllerDB {
 
         @Override
         public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
-            // Metoda nieużywana w tym przypadku
         }
     }
 }

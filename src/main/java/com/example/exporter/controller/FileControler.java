@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+//controller do eksportu tabel
 @RestController
 @RequestMapping("/api")
 public class FileControler {

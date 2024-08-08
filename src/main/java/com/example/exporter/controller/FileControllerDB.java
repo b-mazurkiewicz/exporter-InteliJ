@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+//controller do importu i eksportu schematów
 @Controller
 @CrossOrigin("http://localhost:8080")
 public class FileControllerDB {

@@ -18,17 +18,25 @@ public class SchemaImportService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    // Lista list, która przechowuje wartości pierwszego wiersza z każdego arkusza
     private final List<List<String>> firstRows = new ArrayList<>();
-    private final List<String> sheetNames = new ArrayList<>(); // Lista nazw arkuszy
-    private final Map<String, List<SortColumn>> sortingMap = new HashMap<>(); // Mapa do sortowania
-    private final Map<String, List<String>> columnMap = new LinkedHashMap<>(); // Mapa kolumn dla tabel
 
+    // Lista nazw arkuszy z pliku
+    private final List<String> sheetNames = new ArrayList<>();
+
+    // Mapa przechowująca informacje o kolumnach do sortowania w każdym arkuszu
+    private final Map<String, List<SortColumn>> sortingMap = new HashMap<>();
+
+    // Mapa przechowująca kolumny dla każdej tabeli w bazie danych
+    private final Map<String, List<String>> columnMap = new LinkedHashMap<>();
+
+    // Metoda odczytująca nazwy tabel i kolumn z załadowanego pliku Excel
     public Map<String, List<String>> readTableAndColumnNames(MultipartFile file) throws IOException {
         Map<String, List<String>> tableColumnMap = new LinkedHashMap<>();
-        firstRows.clear();
-        sheetNames.clear(); // Czyść listę nazw arkuszy przed rozpoczęciem nowego importu
-        sortingMap.clear(); // Czyść mapę sortowania przed rozpoczęciem nowego importu
-        columnMap.clear(); // Czyść mapę kolumn przed rozpoczęciem nowego importu
+        firstRows.clear(); // Wyczyść listę przed rozpoczęciem nowego importu
+        sheetNames.clear(); // Wyczyść listę nazw arkuszy
+        sortingMap.clear(); // Wyczyść mapę sortowania
+        columnMap.clear(); // Wyczyść mapę kolumn
 
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
@@ -55,17 +63,18 @@ public class SchemaImportService {
                     continue; // Przejdź do następnego arkusza, jeśli wiersz jest pusty
                 }
 
-                // dataRow
+                // Przetwarzanie drugiego wiersza (dataRow) w celu odczytu nazw tabel i kolumn
                 List<String> columns = new ArrayList<>();
                 for (Cell cell : dataRow) {
                     if (cell.getCellType() == CellType.STRING) {
                         String cellValue = cell.getStringCellValue();
                         String[] parts = cellValue.split("\\.");
 
+                        // Sprawdzenie, czy komórka zawiera nazwę tabeli i kolumny
                         if (parts.length == 2) {
                             String tableName = parts[0];
                             String columnName = parts[1];
-
+                            // Dodanie kolumny do mapy, jeśli jeszcze nie istnieje
                             tableColumnMap.computeIfAbsent(tableName, k -> new ArrayList<>()).add(columnName);
                             columns.add(columnName); // Dodaj kolumny do mapy
                         }
@@ -73,7 +82,7 @@ public class SchemaImportService {
                 }
                 columnMap.put(sheet.getSheetName(), columns); // Zapisz kolumny dla arkusza
 
-                // headerRow
+                // Przetwarzanie pierwszego wiersza (headerRow) w celu odczytu nazw kolumn
                 for (Cell cell : headerRow) {
                     if (cell.getCellType() == CellType.STRING) {
                         String cellValue = cell.getStringCellValue();
@@ -81,13 +90,14 @@ public class SchemaImportService {
                     }
                 }
 
-                // sortingRow
+                // Przetwarzanie trzeciego wiersza (sortingRow) w celu odczytu informacji o sortowaniu
                 List<SortColumn> sortColumns = new ArrayList<>();
                 for (int colNum = 0; colNum < sortingRow.getLastCellNum(); colNum++) {
                     Cell cell = sortingRow.getCell(colNum);
                     if (cell != null && cell.getCellType() == CellType.STRING) {
                         String cellValue = cell.getStringCellValue();
-                        // Parse sorting information, e.g., "1asc" or "2desc"
+
+                        // Sprawdzenie, czy wartość w komórce pasuje do wzoru (np. 1asc, 2desc)
                         if (cellValue.matches("\\d+[a-zA-Z]{2,4}")) {
                             int priority = Integer.parseInt(cellValue.replaceAll("[^0-9]", ""));
                             String sortDirection = cellValue.replaceAll("\\d+", "");
@@ -104,12 +114,14 @@ public class SchemaImportService {
         return tableColumnMap;
     }
 
+    // Metoda tworząca i wypełniająca plik Excel na podstawie danych i kolumn z mapy
     public void createAndFillExcelFile(Map<String, List<String>> tableColumnMap,
                                        Map<String, List<Map<String, Object>>> dataMap,
                                        HttpServletResponse response) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             int sheetIndex = 0;
 
+            // Iteracja przez wszystkie tabele i kolumny w mapie
             for (Map.Entry<String, List<String>> entry : tableColumnMap.entrySet()) {
                 String tableName = entry.getKey();
                 List<String> columns = entry.getValue();
@@ -126,7 +138,7 @@ public class SchemaImportService {
                 if (sheetIndex < firstRows.size()) {
                     firstRow = firstRows.get(sheetIndex);
                 } else {
-                    firstRow = new ArrayList<>(); //jeśli nie znalazł to po prostu tworzy pustą listę żeby nie wyrzuciło błędu
+                    firstRow = new ArrayList<>(); // Utworzenie pustej listy, jeśli brak danych
                 }
                 sheetIndex++;
 
@@ -150,6 +162,7 @@ public class SchemaImportService {
                                 Object value1 = row1.get(columnName);
                                 Object value2 = row2.get(columnName);
 
+                                // Porównanie wartości w kolumnie
                                 int comparison = compareValues(value1, value2);
                                 if (comparison != 0) {
                                     return sortColumn.getDirection().equalsIgnoreCase("desc") ? -comparison : comparison;
@@ -176,8 +189,8 @@ public class SchemaImportService {
                     sheet.autoSizeColumn(i);
                     // Dodaj margines do szerokości kolumny
                     int columnWidth = sheet.getColumnWidth(i);
-                    sheet.setColumnWidth(i, columnWidth + 2000); // Dodaj 2000 jednostek marginesu
-                }
+                    sheet.setColumnWidth(i, columnWidth + 2000); // Dodanie marginesu do szerokości kolumny
+                     }
 
                 // Ustaw minimalną wysokość wiersza (opcjonalne)
                 for (int i = 0; i < rowNum; i++) {
@@ -187,33 +200,32 @@ public class SchemaImportService {
 
             // Zapisz arkusz do odpowiedzi HTTP
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            //response.setHeader("Content-Disposition", "attachment; filename=\"export.xlsx\"");
             workbook.write(response.getOutputStream());
         }
     }
 
-    // Ustaw wartość komórki i styl na podstawie typu danych
+    // Metoda ustawiająca wartość komórki i odpowiedni styl na podstawie typu danych
     private void setCellValueAndStyle(Cell cell, Object value, XSSFWorkbook workbook) {
         if (value != null) {
             CellStyle cellStyle = workbook.createCellStyle();
             if (value instanceof String) {
                 cell.setCellValue((String) value);
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("@"));
+                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("@")); // Format tekstowy
             } else if (value instanceof Integer || value instanceof Long) {
                 cell.setCellValue(((Number) value).doubleValue());
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("0"));
+                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("0")); // Format liczbowy
             } else if (value instanceof Double) {
                 cell.setCellValue((Double) value);
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00")); // Format liczbowy z miejscami po przecinku
             } else if (value instanceof java.util.Date) {
                 cell.setCellValue((java.util.Date) value);
-                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("yyyy-MM-dd"));
+                cellStyle.setDataFormat(workbook.createDataFormat().getFormat("yyyy-MM-dd")); // Format daty
             } else {
                 cell.setCellValue(value.toString());
             }
-            cell.setCellStyle(cellStyle);
+            cell.setCellStyle(cellStyle); // Ustawienie stylu komórki
         } else {
-            cell.setCellValue("");
+            cell.setCellValue(""); // Ustawienie pustej wartości dla null
         }
     }
 
@@ -227,16 +239,16 @@ public class SchemaImportService {
             Comparable<Object> comp1 = (Comparable<Object>) value1;
             @SuppressWarnings("unchecked")
             Comparable<Object> comp2 = (Comparable<Object>) value2;
-            return comp1.compareTo(comp2);
+            return comp1.compareTo(comp2); // Porównanie wartości za pomocą Comparable
         }
-        return value1.toString().compareTo(value2.toString());
+        return value1.toString().compareTo(value2.toString()); // Porównanie wartości jako stringi, jeśli nie są Comparable
     }
 
-    // Klasa do przechowywania informacji o sortowaniu
+    // Klasa wewnętrzna przechowująca informacje o kolumnach do sortowania
     private static class SortColumn {
-        private final int priority;
-        private final int columnIndex;
-        private final String direction;
+        private final int priority; // Priorytet sortowania
+        private final int columnIndex; // Indeks kolumny
+        private final String direction; // Kierunek sortowania ("asc" lub "desc")
 
         public SortColumn(int priority, int columnIndex, String direction) {
             this.priority = priority;

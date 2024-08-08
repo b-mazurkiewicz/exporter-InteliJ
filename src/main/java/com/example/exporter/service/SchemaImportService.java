@@ -50,22 +50,23 @@ public class SchemaImportService {
                 Sheet sheet = workbook.getSheetAt(i);
                 sheetNames.add(sheet.getSheetName()); // Dodaj nazwę arkusza do listy
 
-                // Sprawdź, czy arkusz ma co najmniej cztery wiersze
-                if (sheet.getPhysicalNumberOfRows() < 4) {
-                    continue; // Przejdź do następnego arkusza
+                // Sprawdź, czy arkusz ma co najmniej dwa wiersze
+                if (sheet.getPhysicalNumberOfRows() < 2) {
+                    continue; // Przejdź do następnego arkusza, jeśli jest zbyt mało wierszy
                 }
 
                 List<String> firstRow = new ArrayList<>();
                 firstRows.add(firstRow);
 
-                // Odczytaj pierwszy, drugi i trzeci wiersz
-                Row headerRow = sheet.getRow(0); // W pierwszym wierszu znajdują się nazwy, które użytkownik chce przepisać
-                Row dataRow = sheet.getRow(1); // W drugim wierszu znajduje się lokalizacja danych w bazie
-                Row sortingRow = sheet.getRow(2); // W trzecim wierszu znajdują się informacje potrzebne do sortowania danych
-                Row filterRow = sheet.getRow(3); // W czwartym wierszu znajdują się wartości do filtrowania
+                // Odczytaj wiersze
+                Row headerRow = sheet.getRow(0);
+                Row dataRow = sheet.getRow(1);
+                Row sortingRow = sheet.getRow(2);
+                Row filterRow = sheet.getRow(3);
 
-                if (dataRow == null || headerRow == null || sortingRow == null || filterRow == null) {
-                    continue; // Przejdź do następnego arkusza, jeśli wiersz jest pusty
+                // Sprawdź, czy wiersze nagłówka i danych są obecne
+                if (dataRow == null || headerRow == null) {
+                    continue; // Przejdź do następnego arkusza, jeśli dwa pierwsze wiersze są puste
                 }
 
                 // Przetwarzanie drugiego wiersza (dataRow) w celu odczytu nazw tabel i kolumn
@@ -77,27 +78,27 @@ public class SchemaImportService {
                         String cellValue = cell.getStringCellValue();
                         String[] parts = cellValue.split("\\.");
 
-                        // Sprawdzenie, czy komórka zawiera nazwę tabeli i kolumny
                         if (parts.length == 2) {
                             String tableName = parts[0];
                             String columnName = parts[1];
-                            // Dodanie kolumny do mapy, jeśli jeszcze nie istnieje
                             tableColumnMap.computeIfAbsent(tableName, k -> new ArrayList<>()).add(columnName);
-                            columns.add(columnName); // Dodaj kolumny do mapy
+                            columns.add(columnName);
 
-                            // Odczytaj wartość filtra z czwartego wiersza
-                            Cell filterCell = filterRow.getCell(colNum);
-                            if (filterCell != null && filterCell.getCellType() == CellType.STRING) {
-                                String filterValue = filterCell.getStringCellValue();
-                                if (!filterValue.isEmpty()) {
-                                    filters.put(columnName, filterValue); // Dodaj filtr dla kolumny
+                            // Odczytaj wartość filtra z czwartego wiersza, jeśli filterRow nie jest null
+                            if (filterRow != null) {
+                                Cell filterCell = filterRow.getCell(colNum);
+                                if (filterCell != null && filterCell.getCellType() == CellType.STRING) {
+                                    String filterValue = filterCell.getStringCellValue();
+                                    if (!filterValue.isEmpty()) {
+                                        filters.put(columnName, filterValue);
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                columnMap.put(sheet.getSheetName(), columns); // Zapisz kolumny dla arkusza
-                filterMap.put(sheet.getSheetName(), filters); // Zapisz filtry dla arkusza
+                columnMap.put(sheet.getSheetName(), columns);
+                filterMap.put(sheet.getSheetName(), filters);
 
                 // Przetwarzanie pierwszego wiersza (headerRow) w celu odczytu nazw kolumn
                 for (Cell cell : headerRow) {
@@ -109,74 +110,72 @@ public class SchemaImportService {
 
                 // Przetwarzanie trzeciego wiersza (sortingRow) w celu odczytu informacji o sortowaniu
                 List<SortColumn> sortColumns = new ArrayList<>();
-                for (int colNum = 0; colNum < sortingRow.getLastCellNum(); colNum++) {
-                    Cell cell = sortingRow.getCell(colNum);
-                    if (cell != null && cell.getCellType() == CellType.STRING) {
-                        String cellValue = cell.getStringCellValue();
+                if (sortingRow != null) {
+                    for (int colNum = 0; colNum < sortingRow.getLastCellNum(); colNum++) {
+                        Cell cell = sortingRow.getCell(colNum);
+                        if (cell != null && cell.getCellType() == CellType.STRING) {
+                            String cellValue = cell.getStringCellValue();
 
-                        // Sprawdzenie, czy wartość w komórce pasuje do wzoru (np. 1asc, 2desc)
-                        if (cellValue.matches("\\d+[a-zA-Z]{2,4}")) {
-                            int priority = Integer.parseInt(cellValue.replaceAll("[^0-9]", ""));
-                            String sortDirection = cellValue.replaceAll("\\d+", "");
-                            sortColumns.add(new SortColumn(priority, colNum, sortDirection));
+                            if (cellValue.matches("\\d+[a-zA-Z]{2,4}")) {
+                                int priority = Integer.parseInt(cellValue.replaceAll("[^0-9]", ""));
+                                String sortDirection = cellValue.replaceAll("\\d+", "");
+                                sortColumns.add(new SortColumn(priority, colNum, sortDirection));
+                            }
                         }
                     }
                 }
 
-                // Sort columns by priority
+                // Sortowanie kolumn według priorytetu
                 sortColumns.sort(Comparator.comparingInt(SortColumn::getPriority));
-                sortingMap.put(sheet.getSheetName(), sortColumns); // Zapisz informacje o sortowaniu dla danego arkusza
+                sortingMap.put(sheet.getSheetName(), sortColumns);
             }
         }
         return tableColumnMap;
     }
 
+    // Metoda tworzy i wypełnia plik Excel na podstawie przekazanych danych
     public void createAndFillExcelFile(Map<String, List<String>> tableColumnMap,
                                        Map<String, List<Map<String, Object>>> dataMap,
                                        HttpServletResponse response) throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             int sheetIndex = 0;
 
-            // Iteracja przez wszystkie tabele i kolumny w mapie
+            // Iteracja przez wszystkie wpisy w mapie tabel i kolumn
             for (Map.Entry<String, List<String>> entry : tableColumnMap.entrySet()) {
-                String tableName = entry.getKey();
-                List<String> columns = entry.getValue();
-                List<Map<String, Object>> rows = dataMap.get(tableName);
+                String tableName = entry.getKey(); // Nazwa tabeli
+                List<String> columns = entry.getValue(); // Lista kolumn
+                List<Map<String, Object>> rows = dataMap.get(tableName); // Wiersze danych dla tabeli
 
-                // Użyj nazwy arkusza z oryginalnego pliku, zamiast nazwy tabeli
+                // Pobierz nazwę arkusza dla bieżącego indeksu
                 String sheetName = sheetNames.get(sheetIndex);
 
                 // Pobierz filtry dla arkusza
                 Map<String, String> filters = filterMap.get(sheetName);
                 if (filters != null && !filters.isEmpty()) {
-                    // Zastosuj filtry do wierszy
+                    // Zastosuj filtry do wierszy danych
                     rows = filterRows(rows, filters);
                 }
 
-                // Utwórz arkusz dla tabeli
+                // Utwórz arkusz w skoroszycie
                 Sheet sheet = workbook.createSheet(sheetName);
 
-                // pobieranie odpowiedniej listy dla pierwszego wiersza dla tego arkusza
-                List<String> firstRow;
-                if (sheetIndex < firstRows.size()) {
-                    firstRow = firstRows.get(sheetIndex);
-                } else {
-                    firstRow = new ArrayList<>(); // Utworzenie pustej listy, jeśli brak danych
-                }
+                // Pobierz pierwszy wiersz z nagłówkami dla arkusza
+                List<String> firstRow = sheetIndex < firstRows.size() ? firstRows.get(sheetIndex) : new ArrayList<>();
                 sheetIndex++;
 
-                // Utwórz wiersz nagłówka z wartościami z pierwszego wiersza
+                // Utwórz wiersz nagłówkowy w arkuszu
                 Row headerRow = sheet.createRow(0);
                 for (int i = 0; i < firstRow.size(); i++) {
                     Cell cell = headerRow.createCell(i);
-                    cell.setCellValue(firstRow.get(i));
+                    cell.setCellValue(firstRow.get(i)); // Ustaw wartość w komórce nagłówka
                 }
 
-                // Uzyskaj informacje o sortowaniu dla bieżącego arkusza
+                // Pobierz informacje o sortowaniu dla bieżącego arkusza
                 List<SortColumn> sortColumns = sortingMap.get(sheetName);
-                List<String> columnNames = columnMap.get(sheetName); // Pobierz kolumny dla arkusza
+                List<String> columnNames = columnMap.get(sheetName);
+
+                // Sortowanie wierszy danych, jeśli zdefiniowano kolumny do sortowania
                 if (sortColumns != null && !sortColumns.isEmpty() && columnNames != null) {
-                    // Sortuj wiersze na podstawie informacji o sortowaniu
                     rows.sort((row1, row2) -> {
                         for (SortColumn sortColumn : sortColumns) {
                             int colIndex = sortColumn.getColumnIndex();
@@ -185,7 +184,6 @@ public class SchemaImportService {
                                 Object value1 = row1.get(columnName);
                                 Object value2 = row2.get(columnName);
 
-                                // Porównanie wartości w kolumnie
                                 int comparison = compareValues(value1, value2);
                                 if (comparison != 0) {
                                     return sortColumn.getDirection().equalsIgnoreCase("desc") ? -comparison : comparison;
@@ -196,32 +194,31 @@ public class SchemaImportService {
                     });
                 }
 
-                // Utwórz wiersze danych
+                // Utwórz wiersze danych w arkuszu
                 int rowNum = 1;
                 for (Map<String, Object> rowData : rows) {
                     Row row = sheet.createRow(rowNum++);
                     for (int colNum = 0; colNum < columns.size(); colNum++) {
                         Cell cell = row.createCell(colNum);
                         Object value = rowData.get(columns.get(colNum));
-                        setCellValueAndStyle(cell, value, workbook);
+                        setCellValueAndStyle(cell, value, workbook); // Ustaw wartość i styl komórki
                     }
                 }
 
-                // Automatyczne dostosowanie szerokości kolumn z dodatkowym marginesem
+                // Dostosuj szerokość kolumn
                 for (int i = 0; i < firstRow.size(); i++) {
                     sheet.autoSizeColumn(i);
-                    // Dodaj margines do szerokości kolumny
                     int columnWidth = sheet.getColumnWidth(i);
-                    sheet.setColumnWidth(i, columnWidth + 2000); // Dodanie marginesu do szerokości kolumny
+                    sheet.setColumnWidth(i, columnWidth + 2000); // Dodaj przestrzeń do szerokości kolumny
                 }
 
-                // Ustaw minimalną wysokość wiersza (opcjonalne)
+                // Ustaw wysokość wierszy
                 for (int i = 0; i < rowNum; i++) {
-                    sheet.getRow(i).setHeightInPoints(20); // Dostosuj wysokość do żądanego rozmiaru
+                    sheet.getRow(i).setHeightInPoints(20); // Ustaw wysokość wierszy na 20 punktów
                 }
             }
 
-            // Zapisz arkusz do odpowiedzi HTTP
+            // Ustaw odpowiednie nagłówki dla odpowiedzi HTTP i zapisz plik
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             workbook.write(response.getOutputStream());
         }

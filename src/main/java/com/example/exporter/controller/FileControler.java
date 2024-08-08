@@ -1,25 +1,18 @@
 package com.example.exporter.controller;
 
-import com.example.exporter.model.*;
+import com.example.exporter.model.ExportTask;
 import com.example.exporter.service.ExportTaskManager;
-import com.example.exporter.service.UserService;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+//controller do eksportu tabel
 @RestController
 @RequestMapping("/api")
 public class FileControler {
@@ -39,28 +32,10 @@ public class FileControler {
     }
 
     // Mapping do rozpoczęcia zadania eksportu na podstawie nazwy tabeli/widoku
-    @GetMapping("/export/{tableName}")
-    public ResponseEntity<String> startExportTask(@PathVariable String tableName) {
-        String taskId = UUID.randomUUID().toString();
-        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", Collections.singletonList(tableName));
-        taskManager.addTask(task);
-        return ResponseEntity.ok(taskId);
-    }
-
-    // Mapping do rozpoczęcia zadania eksportu
     @PostMapping("/export")
-    public ResponseEntity<String> startExportTask(@RequestBody ExportTaskRequest request) {
+    public ResponseEntity<String> startExportTask(@RequestBody List<String> tableNames) {
         String taskId = UUID.randomUUID().toString();
-        ExportTask task;
-
-        if (request.getTableName() != null) {
-            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableName());
-        } else if (request.getTableNames() != null && !request.getTableNames().isEmpty()) {
-            task = new ExportTask(taskId, "IN_PROGRESS", request.getTableNames());
-        } else {
-            return ResponseEntity.badRequest().body("No valid table name(s) provided.");
-        }
-
+        ExportTask task = new ExportTask(taskId, "IN_PROGRESS", tableNames);
         taskManager.addTask(task);
         return ResponseEntity.ok(taskId);
     }

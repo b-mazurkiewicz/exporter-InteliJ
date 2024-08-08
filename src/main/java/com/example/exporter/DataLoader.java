@@ -9,13 +9,10 @@ import com.example.exporter.repository.UserRepository;
 import com.example.exporter.service.ViewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
+import java.util.Optional;
 
 @Component
 public class DataLoader implements CommandLineRunner {
@@ -39,41 +36,70 @@ public class DataLoader implements CommandLineRunner {
         // Tworzenie lub aktualizacja widoków
         viewService.createViews();
 
-        // Sprawdzenie i dodanie danych do tabeli Address, jeśli jest pusta
-        if (addressRepository.count() == 0) {
-            Address address1 = new Address(null, "123 Main St", "Anytown", "12345", "USA");
-            Address address2 = new Address(null, "456 Maple St", "Othertown", "67890", "USA");
+        // Dodawanie lub aktualizowanie danych do tabeli Address
+        addOrUpdateAddress(new Address(null, "123 Main St", "Anytown", "12345", "USA"));
+        addOrUpdateAddress(new Address(null, "456 Maple St", "Othertown", "67890", "Poland"));
+        addOrUpdateAddress(new Address(null, "789 Elm St", "Sometown", "13579", "USA"));
+        addOrUpdateAddress(new Address(null, "101 Oak St", "Someothertown", "24680", "Poland"));
+        addOrUpdateAddress(new Address(null, "202 Pine St", "New City", "54321", "USA"));
+        addOrUpdateAddress(new Address(null, "303 Cedar St", "Old Town", "98765", "Poland"));
+        addOrUpdateAddress(new Address(null, "404 Birch St", "Capitol City", "11223", "USA"));
+        addOrUpdateAddress(new Address(null, "505 Walnut St", "Lakeside", "33445", "Poland"));
 
-            addressRepository.save(address1);
-            addressRepository.save(address2);
+        // Dodawanie lub aktualizowanie danych do tabeli Company
+        addOrUpdateCompany(new Company(null, "Company One", "Big City", "NIP123456789", "USA", new HashSet<>()));
+        addOrUpdateCompany(new Company(null, "Company Two", "Small Town", "NIP987654321", "USA", new HashSet<>()));
+        addOrUpdateCompany(new Company(null, "Company Three", "Medium Town", "NIP555555555", "USA", new HashSet<>()));
+        addOrUpdateCompany(new Company(null, "Company Four", "Tiny Town", "NIP666666666", "USA", new HashSet<>()));
+        addOrUpdateCompany(new Company(null, "Company Five", "Major City", "NIP777777777", "USA", new HashSet<>()));
+        addOrUpdateCompany(new Company(null, "Company Six", "Metro City", "NIP888888888", "USA", new HashSet<>()));
+
+        // Dodawanie lub aktualizowanie danych do tabeli User
+        addOrUpdateUser(new User("John", "Doe", "john.doe@example.com", addressRepository.findByStreet("123 Main St"), companyRepository.findByNip("NIP123456789")));
+        addOrUpdateUser(new User("Jane", "Smith", "jane.smith@example.com", addressRepository.findByStreet("456 Maple St"), companyRepository.findByNip("NIP987654321")));
+        addOrUpdateUser(new User("Alice", "Johnson", "alice.johnson@example.com", addressRepository.findByStreet("789 Elm St"), companyRepository.findByNip("NIP555555555")));
+        addOrUpdateUser(new User("Bob", "Brown", "bob.brown@example.com", addressRepository.findByStreet("101 Oak St"), companyRepository.findByNip("NIP666666666")));
+        addOrUpdateUser(new User("Charlie", "Davis", "charlie.davis@example.com", addressRepository.findByStreet("202 Pine St"), companyRepository.findByNip("NIP777777777")));
+        addOrUpdateUser(new User("Diana", "Evans", "diana.evans@example.com", addressRepository.findByStreet("303 Cedar St"), companyRepository.findByNip("NIP888888888")));
+        addOrUpdateUser(new User("Eve", "Martin", "eve.martin@example.com", addressRepository.findByStreet("404 Birch St"), companyRepository.findByNip("NIP123456789")));
+        addOrUpdateUser(new User("Frank", "Wilson", "frank.wilson@example.com", addressRepository.findByStreet("505 Walnut St"), companyRepository.findByNip("NIP987654321")));
+    }
+
+    private void addOrUpdateAddress(Address address) {
+        Address existingAddress = addressRepository.findByStreet(address.getStreet());
+        if (existingAddress != null) {
+            existingAddress.setCity(address.getCity());
+            existingAddress.setZipCode(address.getZipCode());
+            existingAddress.setCountry(address.getCountry());
+            addressRepository.save(existingAddress);
+        } else {
+            addressRepository.save(address);
         }
+    }
 
-        // Sprawdzenie i dodanie danych do tabeli Company, jeśli jest pusta
-        if (companyRepository.count() == 0) {
-            Company company1 = new Company(null, "Company One", "Big City", "NIP123456789", "USA", new HashSet<>());
-            Company company2 = new Company(null, "Company Two", "Small Town", "NIP987654321", "USA", new HashSet<>());
-
-            companyRepository.save(company1);
-            companyRepository.save(company2);
+    private void addOrUpdateCompany(Company company) {
+        Company existingCompany = companyRepository.findByNip(company.getNip());
+        if (existingCompany != null) {
+            existingCompany.setNip(company.getNip());
+            existingCompany.setCity(company.getCity());
+            existingCompany.setCountry(company.getCountry());
+            companyRepository.save(existingCompany);
+        } else {
+            companyRepository.save(company);
         }
+    }
 
-        // Sprawdzenie i dodanie danych do tabeli User, jeśli jest pusta
-        if (userRepository.count() == 0) {
-            // Pobranie adresów z bazy danych na podstawie nazwy ulicy
-            Address address1 = addressRepository.findByStreet("123 Main St");
-            Address address2 = addressRepository.findByStreet("456 Maple St");
-
-            // Pobranie firm z bazy danych na podstawie NIP
-            Company company1 = companyRepository.findByNip("NIP123456789");
-            Company company2 = companyRepository.findByNip("NIP987654321");
-
-            // Utworzenie użytkowników z przypisanymi adresami i firmami
-            User user1 = new User("John", "Doe", "john.doe@example.com", address1, company1);
-            User user2 = new User("Jane", "Smith", "jane.smith@example.com", address2, company2);
-
-            // Zapis użytkowników do bazy danych
-            userRepository.save(user1);
-            userRepository.save(user2);
+    private void addOrUpdateUser(User user) {
+        Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
+        if (existingUser.isPresent()) {
+            User updatedUser = existingUser.get();
+            updatedUser.setFirstName(user.getFirstName());
+            updatedUser.setLastName(user.getLastName());
+            updatedUser.setAddress(user.getAddress());
+            updatedUser.setCompany(user.getCompany());
+            userRepository.save(updatedUser);
+        } else {
+            userRepository.save(user);
         }
     }
 }

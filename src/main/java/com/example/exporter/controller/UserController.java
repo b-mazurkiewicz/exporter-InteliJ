@@ -37,7 +37,7 @@ public class UserController {
 
     @PostMapping
     public User createUser(@RequestBody User user) {
-        // Upewnij się, że adres istnieje
+        //sprawdzamy czy istnieje adres
         if (user.getAddress() != null && user.getAddress().getId() != null) {
             Address address = addressRepository.findById(user.getAddress().getId())
                     .orElseThrow(() -> new RuntimeException("Address not found"));

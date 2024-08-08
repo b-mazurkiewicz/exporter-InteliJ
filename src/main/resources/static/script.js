@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('file', schemaFile);
 
         displayStatus('Uploading schema...', 'info');
-        fetch('/api/schema/upload', {
+        fetch('/upload', {
             method: 'POST',
             body: formData
         })

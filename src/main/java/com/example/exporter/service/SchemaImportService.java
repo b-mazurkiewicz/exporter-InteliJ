@@ -224,14 +224,14 @@ public class SchemaImportService {
         }
     }
 
-    // Metoda do filtrowania wierszy na podstawie wartości w czwartym wierszu
+    // Metoda do filtrowania wierszy na podstawie wartości w czwartym wierszu z obsługą operatorów logicznych
     private List<Map<String, Object>> filterRows(List<Map<String, Object>> rows, Map<String, String> filters) {
         List<Map<String, Object>> filteredRows = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             boolean matches = true;
             for (Map.Entry<String, String> filter : filters.entrySet()) {
                 Object value = row.get(filter.getKey());
-                if (value == null || !value.toString().equalsIgnoreCase(filter.getValue())) {
+                if (value == null || !matchesFilter(value, filter.getValue())) {
                     matches = false;
                     break;
                 }
@@ -242,6 +242,59 @@ public class SchemaImportService {
         }
         return filteredRows;
     }
+
+    // Nowa metoda do porównywania wartości z filtrem, z obsługą operatorów
+    private boolean matchesFilter(Object value, String filterValue) {
+        if (value instanceof String) {
+            return ((String) value).equalsIgnoreCase(filterValue); // Porównanie Stringów (bez rozróżniania wielkości liter)
+        } else if (value instanceof Number) {
+            return compareNumber((Number) value, filterValue); // Porównanie liczb z obsługą operatorów
+        } else if (value instanceof java.util.Date) {
+            return compareDate((java.util.Date) value, filterValue); // Porównanie dat z obsługą operatorów
+        } else if (value instanceof Boolean) {
+            return Boolean.parseBoolean(filterValue) == (Boolean) value; // Porównanie wartości boolean
+        }
+        return value.toString().equals(filterValue); // Domyślne porównanie jako String
+    }
+
+    // Metoda do porównywania liczb z obsługą operatorów
+    private boolean compareNumber(Number value, String filterValue) {
+        double numericValue = value.doubleValue();
+        if (filterValue.startsWith(">=")) {
+            return numericValue >= Double.parseDouble(filterValue.substring(2).trim());
+        } else if (filterValue.startsWith("<=")) {
+            return numericValue <= Double.parseDouble(filterValue.substring(2).trim());
+        } else if (filterValue.startsWith(">")) {
+            return numericValue > Double.parseDouble(filterValue.substring(1).trim());
+        } else if (filterValue.startsWith("<")) {
+            return numericValue < Double.parseDouble(filterValue.substring(1).trim());
+        } else {
+            return numericValue == Double.parseDouble(filterValue.trim());
+        }
+    }
+
+    // Metoda do porównywania dat z obsługą operatorów
+    private boolean compareDate(java.util.Date value, String filterValue) {
+        java.sql.Date filterDate;
+        try {
+            filterDate = java.sql.Date.valueOf(filterValue.substring(1).trim());
+        } catch (IllegalArgumentException e) {
+            return false; // Jeśli filterValue nie jest poprawnym formatem daty, zwróć false
+        }
+
+        if (filterValue.startsWith(">=")) {
+            return value.compareTo(filterDate) >= 0;
+        } else if (filterValue.startsWith("<=")) {
+            return value.compareTo(filterDate) <= 0;
+        } else if (filterValue.startsWith(">")) {
+            return value.compareTo(filterDate) > 0;
+        } else if (filterValue.startsWith("<")) {
+            return value.compareTo(filterDate) < 0;
+        } else {
+            return value.compareTo(filterDate) == 0;
+        }
+    }
+
 
     // Metoda ustawiająca wartość komórki i odpowiedni styl na podstawie typu danych
     private void setCellValueAndStyle(Cell cell, Object value, XSSFWorkbook workbook) {
